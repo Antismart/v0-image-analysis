@@ -1,0 +1,577 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+
+    --primary: 24 94% 53%; /* Pamoja Orange */
+    --primary-foreground: 60 9.1% 97.8%;
+
+    --secondary: 162 84% 39%; /* Unity Teal */
+    --secondary-foreground: 60 9.1% 97.8%;
+
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+
+    --accent: 24 94% 93%; /* Light Pamoja Orange */
+    --accent-foreground: 24 94% 20%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 24 94% 53%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+
+    --card: 20 14.3% 4.5%;
+    --card-foreground: 60 9.1% 97.8%;
+
+    --popover: 20 14.3% 4.5%;
+    --popover-foreground: 60 9.1% 97.8%;
+
+    --primary: 24 94% 53%; /* Pamoja Orange */
+    --primary-foreground: 60 9.1% 97.8%;
+
+    --secondary: 162 84% 39%; /* Unity Teal */
+    --secondary-foreground: 60 9.1% 97.8%;
+
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 73.9%; /* Increased brightness for better readability */
+
+    --accent: 24 94% 12%; /* Darker accent for dark mode */
+    --accent-foreground: 60 9.1% 97.8%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+
+    --border: 12 6.5% 18.1%; /* Slightly brighter border */
+    --input: 12 6.5% 18.1%;
+    --ring: 24 94% 53%;
+
+    /* Custom dark mode colors */
+    --dark-card-hover: 20 14.3% 8%;
+    --dark-highlight: 24 94% 15%;
+    --dark-subtle-accent: 24 70% 20%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "kern" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Enhanced Typography styles */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading font-bold tracking-tight;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    @apply text-4xl leading-tight md:text-5xl lg:text-6xl;
+    font-variation-settings: "wght" 800;
+  }
+
+  h2 {
+    @apply text-3xl leading-tight md:text-4xl;
+    font-variation-settings: "wght" 700;
+  }
+
+  h3 {
+    @apply text-2xl leading-tight md:text-3xl;
+    font-variation-settings: "wght" 700;
+  }
+
+  h4 {
+    @apply text-xl leading-snug md:text-2xl;
+    font-variation-settings: "wght" 600;
+  }
+
+  h5 {
+    @apply text-lg leading-snug md:text-xl;
+    font-variation-settings: "wght" 600;
+  }
+
+  h6 {
+    @apply text-base leading-snug md:text-lg;
+    font-variation-settings: "wght" 600;
+  }
+
+  p {
+    @apply leading-relaxed;
+    font-feature-settings: "onum" 1, "pnum" 1;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Improved link styles */
+  a {
+    @apply transition-colors duration-200;
+  }
+
+  /* Better font rendering for specific elements */
+  .font-numeric {
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+
+  .font-small-caps {
+    font-feature-settings: "smcp" 1, "c2sc" 1;
+  }
+
+  .font-fractions {
+    font-feature-settings: "frac" 1;
+  }
+}
+
+/* Enhanced component styles */
+@layer components {
+  .hero-heading {
+    @apply font-montserrat font-extrabold tracking-tighter text-4xl md:text-5xl lg:text-6xl;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .section-heading {
+    @apply font-heading font-bold tracking-tight text-3xl md:text-4xl mb-6;
+    letter-spacing: -0.02em;
+  }
+
+  .card-title {
+    @apply font-heading font-semibold tracking-tight;
+    letter-spacing: -0.01em;
+  }
+
+  .badge-text {
+    @apply text-xs font-medium;
+    letter-spacing: 0.02em;
+  }
+
+  .nav-link {
+    @apply text-sm font-medium transition-colors hover:text-pamoja-500;
+    letter-spacing: 0.01em;
+  }
+
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+    letter-spacing: 0.01em;
+  }
+
+  /* Responsive container utilities */
+  .responsive-container {
+    @apply w-full px-4 sm:px-6 md:px-8 mx-auto;
+    max-width: min(100%, 1400px);
+  }
+
+  .responsive-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  .responsive-flex {
+    @apply flex flex-col sm:flex-row items-start gap-4 sm:items-center sm:gap-6;
+  }
+
+  /* Enhanced responsive typography */
+  .responsive-heading {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading font-bold tracking-tight;
+    letter-spacing: -0.02em;
+  }
+
+  .responsive-subheading {
+    @apply text-xl sm:text-2xl md:text-3xl font-heading font-semibold tracking-tight;
+    letter-spacing: -0.01em;
+  }
+
+  /* Display text for special elements */
+  .display-text {
+    @apply font-montserrat font-bold tracking-tighter;
+    letter-spacing: -0.03em;
+  }
+
+  /* Caption text for small elements */
+  .caption-text {
+    @apply text-xs text-muted-foreground;
+    letter-spacing: 0.02em;
+    font-feature-settings: "case" 1;
+  }
+
+  /* Responsive spacing */
+  .section-padding {
+    @apply py-8 sm:py-12 md:py-16 lg:py-20;
+  }
+
+  .section-margin {
+    @apply my-8 sm:my-12 md:my-16 lg:my-20;
+  }
+
+  /* Light mode card enhancements */
+  .light-card-shadow {
+    @apply shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  /* Light mode specific button styles */
+  .light .button-primary {
+    @apply bg-pamoja-500 text-white hover:bg-pamoja-600;
+  }
+
+  /* Light mode specific form styles */
+  .light input,
+  .light textarea,
+  .light select {
+    @apply bg-white border-gray-200;
+  }
+
+  /* Light mode focus styles */
+  .light *:focus-visible {
+    @apply outline-none ring-2 ring-pamoja-500/70 ring-offset-2;
+  }
+
+  /* Enhanced blockquote styling */
+  blockquote {
+    @apply pl-4 border-l-4 border-pamoja-300 dark:border-pamoja-700 italic text-muted-foreground;
+    font-family: var(--font-outfit);
+  }
+
+  /* Enhanced code styling */
+  code {
+    @apply font-mono text-sm bg-muted px-1.5 py-0.5 rounded;
+    font-feature-settings: "calt" 0;
+  }
+
+  /* Enhanced list styling */
+  ul,
+  ol {
+    @apply pl-6;
+  }
+
+  ul {
+    @apply list-disc;
+  }
+
+  ol {
+    @apply list-decimal;
+  }
+
+  /* Enhanced table styling */
+  table {
+    @apply w-full border-collapse;
+  }
+
+  th {
+    @apply text-left font-semibold p-2 border-b-2 border-muted;
+  }
+
+  td {
+    @apply p-2 border-b border-muted;
+  }
+}
+
+/* Add these responsive media queries for more specific adjustments */
+@media (max-width: 640px) {
+  h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: clamp(1.5rem, 6vw, 2.25rem);
+    line-height: 1.3;
+  }
+
+  .hero-heading {
+    font-size: clamp(2.25rem, 10vw, 3.5rem);
+    line-height: 1.1;
+  }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+  button,
+  .button,
+  [role="button"],
+  a.button,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* Add these dark mode specific utility classes */
+@layer utilities {
+  .dark-card-hover {
+    @apply hover:bg-[hsl(var(--dark-card-hover))];
+  }
+
+  .dark-highlight {
+    @apply dark:bg-[hsl(var(--dark-highlight))];
+  }
+
+  .dark-border-subtle {
+    @apply dark:border-[hsl(var(--dark-subtle-accent))];
+  }
+
+  .dark-shadow {
+    @apply dark:shadow-[0_4px_12px_rgba(0,0,0,0.5)];
+  }
+
+  /* Improved dark mode text contrast */
+  .dark-text-enhanced {
+    @apply dark:text-white dark:text-opacity-90;
+  }
+
+  .dark-text-muted {
+    @apply dark:text-white dark:text-opacity-70;
+  }
+
+  /* Dark mode specific brand colors */
+  .dark-pamoja {
+    @apply dark:bg-pamoja-600 dark:text-white;
+  }
+
+  .dark-unity {
+    @apply dark:bg-unity-600 dark:text-white;
+  }
+
+  .light-shadow {
+    @apply shadow-md hover:shadow-lg transition-shadow;
+  }
+
+  .light-border {
+    @apply border border-gray-200;
+  }
+
+  /* Light mode specific text contrast */
+  .light-text-enhanced {
+    @apply text-gray-900;
+  }
+
+  .light-text-muted {
+    @apply text-gray-500;
+  }
+
+  /* Enhanced typography utilities */
+  .font-thin {
+    font-weight: 300;
+  }
+
+  .font-normal {
+    font-weight: 400;
+  }
+
+  .font-medium {
+    font-weight: 500;
+  }
+
+  .font-semibold {
+    font-weight: 600;
+  }
+
+  .font-bold {
+    font-weight: 700;
+  }
+
+  .font-extrabold {
+    font-weight: 800;
+  }
+
+  .tracking-tighter {
+    letter-spacing: -0.05em;
+  }
+
+  .tracking-tight {
+    letter-spacing: -0.025em;
+  }
+
+  .tracking-normal {
+    letter-spacing: 0;
+  }
+
+  .tracking-wide {
+    letter-spacing: 0.025em;
+  }
+
+  .tracking-wider {
+    letter-spacing: 0.05em;
+  }
+
+  .tracking-widest {
+    letter-spacing: 0.1em;
+  }
+
+  /* Font family utilities */
+  .font-sans {
+    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .font-heading {
+    font-family: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .font-display {
+    font-family: var(--font-montserrat), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .font-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+}
+
+/* Add these custom dark mode styles for specific components */
+@layer components {
+  .dark .card {
+    border-color: hsl(var(--border));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: hsl(var(--input));
+    border-color: hsl(var(--border));
+  }
+
+  .dark .button-primary {
+    background-color: hsl(var(--primary));
+    color: white;
+  }
+
+  .dark .button-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
+  }
+
+  .dark *:focus-visible {
+    outline: none;
+    --tw-ring-color: hsl(var(--primary) / 0.7);
+    --tw-ring-offset-width: 2px;
+    --tw-ring-offset-color: transparent;
+    --tw-ring-opacity: 0.7;
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+  }
+}
+
+/* Add loading animation keyframes */
+@keyframes loading-bar {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1.5s ease-in-out infinite;
+}
+
+/* Enhance bounce animation for loading dots */
+@keyframes custom-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-custom-bounce {
+  animation: custom-bounce 0.6s infinite;
+}
+
+/* Add light mode specific styles for components */
+.light .card {
+  @apply shadow-sm hover:shadow-md transition-shadow;
+}
+
+.light .event-card {
+  @apply shadow-sm hover:shadow-md transition-shadow;
+}
+
+.light .button-primary {
+  @apply shadow-sm hover:shadow-md;
+}
+
+/* Light mode specific illustrations */
+.light .illustration-background {
+  @apply bg-orange-50;
+}
+
+.light .illustration-accent {
+  @apply text-pamoja-500;
+}
+
+/* Enhanced selection styling */
+::selection {
+  @apply bg-pamoja-500/20 text-foreground;
+}
+
+/* Enhanced scrollbar styling */
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted/50;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/30 rounded-full border-4 border-solid border-transparent bg-clip-padding;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
+
+/* Enhanced focus styles */
+:focus-visible {
+  @apply outline-none ring-2 ring-primary/70 ring-offset-2 ring-offset-background;
+}
+
+/* Enhanced placeholder styles */
+::placeholder {
+  @apply text-muted-foreground/60;
+}
