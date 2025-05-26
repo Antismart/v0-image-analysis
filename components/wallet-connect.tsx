@@ -1,15 +1,22 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { useWallet } from "@/context/wallet-context"
 import { Copy, ExternalLink, LogOut } from "lucide-react"
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 
 export function WalletConnect() {
-  const { address, isConnected, connect, disconnect } = useWallet()
-  const [isOpen, setIsOpen] = useState(false)
-  const [isCopied, setIsCopied] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const { address, isConnected, connect, disconnect, connectors } = useWallet();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [showWalletOptions, setShowWalletOptions] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { ready, authenticated, login, linkWallet, logout } = usePrivy();
+  const { wallets } = useWallets();
+
+  useEffect(() => { setMounted(true); }, []);
 
   const truncateAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -22,6 +29,25 @@ export function WalletConnect() {
       setTimeout(() => setIsCopied(false), 2000)
     }
   }
+
+  const handleConnect = async () => {
+    if (!ready) return;
+    if (!authenticated) {
+      await login();
+    } else {
+      await linkWallet(); // Link additional wallet if already authenticated
+    }
+  };
+
+  const handleDisconnect = () => {
+    // Disconnect from both Wagmi and Privy
+    disconnect();
+    if (authenticated) {
+      logout();
+    }
+    setIsOpen(false);
+    setShowWalletOptions(false);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -36,8 +62,56 @@ export function WalletConnect() {
     }
   }, [])
 
+  // Listen for custom 'wallet-disconnect' event
+  useEffect(() => {
+    const handler = () => {
+      setIsOpen(false);
+      setShowWalletOptions(false);
+    };
+    window.addEventListener('wallet-disconnect', handler);
+    return () => window.removeEventListener('wallet-disconnect', handler);
+  }, []);
+
+  if (!mounted) return null;
+
   if (!isConnected) {
-    return <Button onClick={connect}>Connect Wallet</Button>
+    // Prefer Privy modal if available
+    if (ready) {
+      return (
+        <Button onClick={handleConnect}>Connect Wallet</Button>
+      );
+    }
+    // Fallback: show wagmi connector options
+    return (
+      <div className="relative">
+        <Button onClick={() => setShowWalletOptions(true)}>Connect Wallet</Button>
+        {showWalletOptions && (
+          <div className="absolute z-50 mt-2 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg dark:bg-gray-800 dark:border-gray-700">
+            <div className="px-2 py-1.5 text-sm font-semibold">Select Wallet</div>
+            <div className="my-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+            {connectors.map((connector: any) => (
+              <button
+                key={connector.id}
+                className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={async () => {
+                  await connect(connector);
+                  setShowWalletOptions(false);
+                }}
+                disabled={!connector.ready}
+              >
+                {connector.name} {connector.ready ? '' : '(Unavailable)'}
+              </button>
+            ))}
+            <button
+              className="w-full mt-2 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              onClick={() => setShowWalletOptions(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -73,10 +147,7 @@ export function WalletConnect() {
           <div className="my-1 h-px bg-gray-200 dark:bg-gray-700"></div>
 
           <div
-            onClick={() => {
-              disconnect()
-              setIsOpen(false)
-            }}
+            onClick={handleDisconnect}
             className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             Disconnect

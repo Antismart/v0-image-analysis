@@ -1,0 +1,322 @@
+[
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "ReentrancyGuardReentrantCall"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "eventId",
+              "type": "uint256",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "EventCancelled",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "eventId",
+              "type": "uint256",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "organizer",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "EventCreated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "eventId",
+              "type": "uint256",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "EventUpdated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "eventId",
+              "type": "uint256",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "attendee",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "RSVP",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "eventId",
+              "type": "uint256",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "attendee",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "TicketPurchased",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" },
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "attendees",
+          "outputs": [
+            { "internalType": "address", "name": "", "type": "address" }
+          ]
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "cancelEvent"
+        },
+        {
+          "inputs": [
+            { "internalType": "string", "name": "_title", "type": "string" },
+            {
+              "internalType": "string",
+              "name": "_description",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_dateTime",
+              "type": "uint256"
+            },
+            { "internalType": "string", "name": "_location", "type": "string" },
+            {
+              "internalType": "uint256",
+              "name": "_capacity",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_ticketPrice",
+              "type": "uint256"
+            },
+            { "internalType": "string", "name": "_imageUrl", "type": "string" },
+            {
+              "internalType": "address",
+              "name": "_usdcToken",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "_xmtpGroupId",
+              "type": "string"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "createEvent"
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "events",
+          "outputs": [
+            { "internalType": "string", "name": "title", "type": "string" },
+            {
+              "internalType": "string",
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "dateTime",
+              "type": "uint256"
+            },
+            { "internalType": "string", "name": "location", "type": "string" },
+            {
+              "internalType": "address",
+              "name": "organizer",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "capacity",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "ticketPrice",
+              "type": "uint256"
+            },
+            { "internalType": "string", "name": "imageUrl", "type": "string" },
+            {
+              "internalType": "address",
+              "name": "usdcToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "gateToken",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minTokenBalance",
+              "type": "uint256"
+            },
+            { "internalType": "bool", "name": "isERC721Gate", "type": "bool" },
+            { "internalType": "bool", "name": "nftTicketing", "type": "bool" },
+            {
+              "internalType": "address",
+              "name": "nftTicketAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "xmtpGroupId",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "attendeeCount",
+              "type": "uint256"
+            },
+            { "internalType": "bool", "name": "cancelled", "type": "bool" }
+          ]
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getAttendees",
+          "outputs": [
+            { "internalType": "address[]", "name": "", "type": "address[]" }
+          ]
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" },
+            { "internalType": "address", "name": "", "type": "address" }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "hasRSVPed",
+          "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }]
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" },
+            { "internalType": "address", "name": "attendee", "type": "address" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "markAttendance"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "nextEventId",
+          "outputs": [
+            { "internalType": "uint256", "name": "", "type": "uint256" }
+          ]
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "rsvpOrPurchase"
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" },
+            {
+              "internalType": "address",
+              "name": "nftAddress",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setNFTTicketing"
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" },
+            { "internalType": "address", "name": "token", "type": "address" },
+            {
+              "internalType": "uint256",
+              "name": "minBalance",
+              "type": "uint256"
+            },
+            { "internalType": "bool", "name": "isERC721", "type": "bool" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setTokenGate"
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" },
+            { "internalType": "string", "name": "_title", "type": "string" },
+            {
+              "internalType": "string",
+              "name": "_description",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_dateTime",
+              "type": "uint256"
+            },
+            { "internalType": "string", "name": "_location", "type": "string" },
+            {
+              "internalType": "uint256",
+              "name": "_capacity",
+              "type": "uint256"
+            },
+            { "internalType": "string", "name": "_imageUrl", "type": "string" }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "updateEvent"
+        }
+      ]

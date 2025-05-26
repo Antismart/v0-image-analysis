@@ -13,8 +13,6 @@ interface XMTPContextType {
   disconnect: () => void
   xmtpClient: any | null
   createConversation: (peerAddress: string) => Promise<any | null>
-  createGroup: (name: string, description?: string) => Promise<any | null>
-  getUserGroups: () => Promise<any[]>
   getConversations: () => Promise<any[]>
   sendMessage: (conversation: any, content: string) => Promise<boolean>
   streamAllMessages: (onMessage: (message: any) => void) => Promise<() => void>
@@ -28,8 +26,6 @@ const XMTPContext = createContext<XMTPContextType>({
   disconnect: () => {},
   xmtpClient: null,
   createConversation: async () => null,
-  createGroup: async () => null,
-  getUserGroups: async () => [],
   getConversations: async () => [],
   sendMessage: async () => false,
   streamAllMessages: async () => () => {},
@@ -124,57 +120,6 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
     }
   }, [xmtpClient])
 
-  // Create a group (simulated using conversations)
-  const createGroup = useCallback(async (name: string, description?: string) => {
-    if (!xmtpClient) {
-      console.error("XMTP client not connected")
-      return null
-    }
-
-    try {
-      console.log("Creating group:", name)
-      
-      // Since XMTP doesn't have native groups in this version, 
-      // we'll create a mock group object that can be used for UI purposes
-      // In a real implementation, you'd store group metadata in your backend
-      const mockGroup = {
-        id: `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: name,
-        description: description || '',
-        createdAt: new Date(),
-        memberCount: 1, // Just the creator initially
-        // This would be where you'd store the actual conversation references
-        // for group participants in a real implementation
-      }
-      
-      console.log("Mock group created:", mockGroup.id)
-      return mockGroup
-    } catch (error) {
-      console.error("Error creating group:", error)
-      return null
-    }
-  }, [xmtpClient])
-
-  // Get user's groups (simulated for XMTP v11 which doesn't have native groups)
-  const getUserGroups = useCallback(async () => {
-    if (!xmtpClient) {
-      console.error("XMTP client not connected")
-      return []
-    }
-
-    try {
-      console.log("Getting user groups...")
-      
-      // Since XMTP doesn't have native groups in this version,
-      // we'll return an empty array or mock groups
-      // In a real implementation, you'd fetch group metadata from your backend
-      return []
-    } catch (error) {
-      console.error("Error fetching user groups:", error)
-      return []
-    }
-  }, [xmtpClient])
-
   // Get all conversations
   const getConversations = useCallback(async () => {
     if (!xmtpClient) {
@@ -264,9 +209,7 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
         connect, 
         disconnect, 
         xmtpClient, 
-        createConversation,
-        createGroup,
-        getUserGroups, 
+        createConversation, 
         getConversations, 
         sendMessage,
         streamAllMessages,

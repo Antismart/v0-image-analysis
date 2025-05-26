@@ -27,12 +27,12 @@ interface ChatWindowProps {
 
 export function ChatWindow({ eventId }: ChatWindowProps) {
   const { address } = useWallet()
-  const { isConnected: isXmtpConnected, connect: connectXmtp } = useXMTP()
+  const { isConnected: isXmtpConnected, connect: connectXmtp, isConnecting } = useXMTP()
   const [message, setMessage] = useState("")
   const [showAI, setShowAI] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Mock messages for demonstration
+  // Mock messages for demonstration - replace with real XMTP integration
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "1",
@@ -92,13 +92,24 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-  if (!isXmtpConnected) {
+  if (!isXmtpConnected && !isConnecting) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border p-8 text-center">
         <ChatIllustration className="mb-6 max-w-[200px]" />
         <h3 className="mb-2 text-xl font-semibold">Connect to XMTP</h3>
-        <p className="mb-4 text-muted-foreground">You need to connect to XMTP to join the event chat.</p>
-        <Button onClick={connectXmtp}>Connect to XMTP</Button>
+        <p className="mb-4 text-muted-foreground">Connect to XMTP to join the event chat and interact with other attendees.</p>
+        <Button onClick={connectXmtp} disabled={isConnecting}>
+          {isConnecting ? "Connecting..." : "Connect to XMTP"}
+        </Button>
+      </div>
+    )
+  }
+
+  if (isConnecting) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border p-8 text-center">
+        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="text-muted-foreground">Connecting to XMTP...</p>
       </div>
     )
   }

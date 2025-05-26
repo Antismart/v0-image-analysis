@@ -10,7 +10,7 @@ export default function Footer() {
             <LogoWithText />
           </Link>
           <p className="text-center text-sm text-muted-foreground md:text-left dark:text-muted-foreground/90 tracking-wide">
-            Decentralized event coordination platform on Base
+            Your go to Onchain event coordination platform
           </p>
         </div>
         <div className="flex gap-4">
@@ -26,14 +26,7 @@ export default function Footer() {
           >
             Privacy
           </Link>
-          <Link
-            href="https://github.com/pamojaevents"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline dark:text-muted-foreground/90 dark:hover:text-white tracking-wide"
-          >
-            GitHub
-          </Link>
+  
         </div>
       </div>
     </footer>

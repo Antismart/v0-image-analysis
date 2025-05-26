@@ -7,6 +7,8 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { DarkModeStyles } from "@/components/dark-mode-styles"
 import { ToastProvider } from "@/components/ui/toast"
+import { Web3Provider } from "@/components/web3-provider"
+import ClientRoot from "@/components/client-root"
 import "./globals.css"
 
 // Enhanced font configuration with more weights
@@ -50,21 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} ${inter.variable} ${montserrat.variable} font-sans antialiased`}>
-        {/* Removed ThemeProvider - now using direct DOM manipulation */}
-        <DarkModeStyles />
-        <ToastProvider>
-          <WalletProvider>
-            <XMTPProvider>
-              <UserProvider>
-                <div className="flex min-h-screen flex-col">
-                  <Navbar />
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                </div>
-              </UserProvider>
-            </XMTPProvider>
-          </WalletProvider>
-        </ToastProvider>
+        <ClientRoot>{children}</ClientRoot>
       </body>
     </html>
   )

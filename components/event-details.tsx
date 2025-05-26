@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { format } from "date-fns"
 import { CalendarIcon, MapPin, Users, Clock, Share2, Heart, Lock } from "lucide-react"
@@ -8,48 +8,111 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PaymentModal } from "@/components/payment-modal"
+import { EventCheckin } from "@/components/event-checkin"
+import { SocialShare } from "@/components/social-share"
 import { useWallet } from "@/context/wallet-context"
 import { SuccessIllustration } from "@/components/illustrations"
+import EventGroupChat from "@/components/event-group-chat"
+import { useOnChainEvents } from "@/hooks/use-onchain-events"
+import { rsvpToEvent, checkUserRSVP } from "@/hooks/use-blockchain-profile"
 
 interface EventDetailsProps {
   id: string
 }
 
 export function EventDetails({ id }: EventDetailsProps) {
-  const { isConnected } = useWallet()
+  const { isConnected, address, walletClient } = useWallet()
+  const { events, loading, error } = useOnChainEvents()
   const [isRSVPed, setIsRSVPed] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
 
-  // Mock event data for demonstration
-  const event = {
-    id,
-    title: "Web3 Developer Meetup",
-    description:
-      "Join us for a night of coding, learning, and networking with fellow web3 developers. We'll have talks on the latest developments in the Base ecosystem, hands-on workshops, and plenty of time for networking.\n\nOur speakers include leading developers from the Base ecosystem who will share insights on building decentralized applications, optimizing smart contracts, and leveraging the latest tools and frameworks.\n\nFood and drinks will be provided!",
-    date: new Date("2025-06-15T18:00:00"),
-    endTime: new Date("2025-06-15T21:00:00"),
-    location: "Tech Hub, 123 Blockchain St, San Francisco, CA",
-    organizer: "0x1234...5678",
-    organizerName: "Web3 SF Community",
-    image: "/placeholder.svg?height=400&width=800",
-    isTokenGated: false,
-    attendees: 42,
-    capacity: 100,
-    ticketPrice: 0.05,
-  }
+  // Find the event first
+  const event = events.find(e => e.id === id)
 
-  const handleRSVP = () => {
-    if (event.ticketPrice > 0) {
-      setIsPaymentModalOpen(true)
+  // Check if current user is the organizer
+  const isOrganizer = address?.toLowerCase() === event?.organizer.toLowerCase()
+
+  const handleShare = async () => {
+    if (!event) return
+    
+    const eventUrl = `${window.location.origin}/event/${event.id}`
+    const shareData = {
+      title: event.title,
+      text: `Check out this event: ${event.title}`,
+      url: eventUrl
+    }
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData)
+      } catch (error) {
+        console.error('Error sharing:', error)
+        // Fallback to clipboard
+        navigator.clipboard.writeText(eventUrl)
+      }
     } else {
-      setIsRSVPed(true)
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(eventUrl)
+      // You could add a toast notification here
     }
   }
 
-  const handlePaymentComplete = () => {
+  // Check if user has already RSVPed when component loads or address changes
+  useEffect(() => {
+    const checkRSVPStatus = async () => {
+      if (address && event) {
+        try {
+          const hasRSVP = await checkUserRSVP(event.id.toString(), address)
+          setIsRSVPed(hasRSVP)
+        } catch (error) {
+          console.error('Error checking RSVP status:', error)
+        }
+      }
+    }
+    
+    checkRSVPStatus()
+  }, [address, event])
+
+  if (loading) {
+    return <div className="flex min-h-[400px] items-center justify-center">Loading event...</div>
+  }
+  if (error) {
+    return <div className="flex min-h-[400px] items-center justify-center text-red-500">{error}</div>
+  }
+  if (!event) {
+    return <div className="flex min-h-[400px] items-center justify-center">Event not found.</div>
+  }
+
+  const handleRSVP = async () => {
+    if (event.ticketPrice > 0) {
+      setIsPaymentModalOpen(true)
+    } else {
+      // Free event - RSVP directly to blockchain
+      if (address && walletClient) {
+        try {
+          await rsvpToEvent(event.id.toString(), address, walletClient)
+          setIsRSVPed(true)
+        } catch (error) {
+          console.error('Error RSVPing:', error)
+          // Could show error toast here
+        }
+      }
+    }
+  }
+
+  const handlePaymentComplete = async () => {
     setIsPaymentModalOpen(false)
-    setIsRSVPed(true)
+    // After successful payment, the blockchain transaction will handle RSVP
+    // We can check the RSVP status again
+    if (address) {
+      try {
+        const hasRSVP = await checkUserRSVP(event.id.toString(), address)
+        setIsRSVPed(hasRSVP)
+      } catch (error) {
+        console.error('Error checking RSVP after payment:', error)
+      }
+    }
   }
 
   return (
@@ -69,7 +132,7 @@ export function EventDetails({ id }: EventDetailsProps) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-balance">{event.title}</h1>
-          <p className="text-muted-foreground">Organized by {event.organizerName}</p>
+          <p className="text-muted-foreground">Organized by {event.organizer}</p>
         </div>
 
         <div className="flex gap-2">
@@ -82,9 +145,11 @@ export function EventDetails({ id }: EventDetailsProps) {
           >
             <Heart className={`h-5 w-5 ${isFavorite ? "fill-pamoja-500 text-pamoja-500" : ""}`} />
           </Button>
-          <Button variant="outline" size="icon" aria-label="Share event">
-            <Share2 className="h-5 w-5" />
-          </Button>
+          <SocialShare 
+            title={event.title}
+            description={event.description}
+            eventId={event.id.toString()}
+          />
         </div>
       </div>
 
@@ -93,7 +158,7 @@ export function EventDetails({ id }: EventDetailsProps) {
           <CalendarIcon className="h-5 w-5 text-pamoja-500 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">Date</p>
-            <p className="text-sm text-muted-foreground truncate">{format(event.date, "EEEE, MMMM d, yyyy")}</p>
+            <p className="text-sm text-muted-foreground truncate">{event.date ? new Date(event.date).toLocaleDateString() : "-"}</p>
           </div>
         </div>
 
@@ -101,9 +166,7 @@ export function EventDetails({ id }: EventDetailsProps) {
           <Clock className="h-5 w-5 text-pamoja-500 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">Time</p>
-            <p className="text-sm text-muted-foreground truncate">
-              {format(event.date, "h:mm a")} - {format(event.endTime, "h:mm a")}
-            </p>
+            <p className="text-sm text-muted-foreground truncate">{event.date ? new Date(event.date).toLocaleTimeString() : "-"}</p>
           </div>
         </div>
 
@@ -119,9 +182,7 @@ export function EventDetails({ id }: EventDetailsProps) {
           <Users className="h-5 w-5 text-pamoja-500 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">Attendees</p>
-            <p className="text-sm text-muted-foreground truncate">
-              {event.attendees} / {event.capacity}
-            </p>
+            <p className="text-sm text-muted-foreground truncate">{event.attendees} / {event.capacity}</p>
           </div>
         </div>
       </div>
@@ -129,101 +190,58 @@ export function EventDetails({ id }: EventDetailsProps) {
       <Tabs defaultValue="about">
         <TabsList>
           <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="speakers">Speakers</TabsTrigger>
+          {event.speakers && event.speakers.length > 0 && (
+            <TabsTrigger value="speakers">Speakers</TabsTrigger>
+          )}
+          {event.schedule && event.schedule.length > 0 && (
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          )}
+          {isOrganizer && (
+            <TabsTrigger value="checkin">Check-in</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="about" className="mt-4">
           <div className="prose max-w-none dark:prose-invert">
-            {event.description.split("\n\n").map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
+            {event.description}
           </div>
         </TabsContent>
-
-        <TabsContent value="schedule" className="mt-4">
-          <div className="space-y-4">
-            <div className="rounded-lg border p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-medium">Welcome & Introduction</h3>
-                <span className="text-sm text-muted-foreground">6:00 PM - 6:15 PM</span>
-              </div>
-              <p className="text-sm text-muted-foreground">Opening remarks and overview of the evening's agenda.</p>
+        {event.speakers && event.speakers.length > 0 && (
+          <TabsContent value="speakers" className="mt-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {event.speakers.map((speaker: any, idx: number) => (
+                <div key={idx} className="flex flex-col items-center rounded-lg border p-4">
+                  {speaker.avatar ? (
+                    <img src={speaker.avatar} alt={speaker.name} className="w-16 h-16 rounded-full object-cover mb-2 border" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground border mb-2">No Image</div>
+                  )}
+                  <div className="font-semibold text-lg">{speaker.name}</div>
+                  <div className="text-sm text-muted-foreground mb-1">{speaker.title}</div>
+                  <div className="text-xs text-muted-foreground text-center">{speaker.bio}</div>
+                </div>
+              ))}
             </div>
-
-            <div className="rounded-lg border p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-medium">Keynote: Building on Base</h3>
-                <span className="text-sm text-muted-foreground">6:15 PM - 7:00 PM</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                A deep dive into the Base ecosystem and best practices for developers.
-              </p>
+          </TabsContent>
+        )}
+        {event.schedule && event.schedule.length > 0 && (
+          <TabsContent value="schedule" className="mt-4">
+            <div className="space-y-4">
+              {event.schedule.map((item: any, idx: number) => (
+                <div key={idx} className="rounded-lg border p-4">
+                  <div className="font-semibold">{item.title}</div>
+                  <div className="text-sm text-muted-foreground mb-1">{item.time}</div>
+                  <div className="text-xs text-muted-foreground">{item.description}</div>
+                </div>
+              ))}
             </div>
-
-            <div className="rounded-lg border p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-medium">Workshop: XMTP Integration</h3>
-                <span className="text-sm text-muted-foreground">7:00 PM - 7:45 PM</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Hands-on session on implementing secure messaging with XMTP.
-              </p>
-            </div>
-
-            <div className="rounded-lg border p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-medium">Networking & Refreshments</h3>
-                <span className="text-sm text-muted-foreground">7:45 PM - 9:00 PM</span>
-              </div>
-              <p className="text-sm text-muted-foreground">Connect with fellow developers and enjoy food and drinks.</p>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="speakers" className="mt-4">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start gap-4 rounded-lg border p-4">
-              <div className="h-16 w-16 overflow-hidden rounded-full bg-muted flex-shrink-0">
-                <Image
-                  src="/placeholder.svg?height=64&width=64"
-                  alt="Speaker"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-medium">Jane Smith</h3>
-                <p className="text-sm text-muted-foreground">Blockchain Developer, Ethereum Foundation</p>
-                <p className="mt-2 text-sm">
-                  Jane is a core contributor to several Base ecosystem projects and specializes in smart contract
-                  optimization.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 rounded-lg border p-4">
-              <div className="h-16 w-16 overflow-hidden rounded-full bg-muted">
-                <Image
-                  src="/placeholder.svg?height=64&width=64"
-                  alt="Speaker"
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div>
-                <h3 className="font-medium">John Doe</h3>
-                <p className="text-sm text-muted-foreground">Founder, DeFi Protocol</p>
-                <p className="mt-2 text-sm">
-                  John has been building in web3 for over 5 years and will share insights on creating user-friendly
-                  dApps.
-                </p>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
+        )}
+        {isOrganizer && (
+          <TabsContent value="checkin" className="mt-4">
+            <EventCheckin eventId={event.id.toString()} isOrganizer={isOrganizer} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <div className="rounded-lg border p-6">
@@ -238,7 +256,7 @@ export function EventDetails({ id }: EventDetailsProps) {
             <div className="mb-4 text-center">
               <h2 className="text-xl font-bold">Ready to join this event?</h2>
               <p className="text-muted-foreground">
-                {event.ticketPrice > 0 ? `Ticket price: ${event.ticketPrice} ETH` : "This is a free event"}
+                {event.ticketPrice > 0 ? `Ticket price: ${event.ticketPrice} USDC` : "This is a free event"}
               </p>
             </div>
 
@@ -249,9 +267,7 @@ export function EventDetails({ id }: EventDetailsProps) {
             ) : (
               <div className="text-center">
                 <p className="mb-4 text-muted-foreground">Connect your wallet to RSVP for this event</p>
-                <Button variant="outline" className="w-full">
-                  Connect Wallet
-                </Button>
+                <Button variant="outline" className="w-full">Connect Wallet</Button>
               </div>
             )}
           </>
@@ -265,7 +281,19 @@ export function EventDetails({ id }: EventDetailsProps) {
         amount={event.ticketPrice}
         eventId={event.id}
         eventTitle={event.title}
+        organizer={event.organizer}
       />
+
+      {/* XMTP Group Chat */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">Event Chat</h2>
+        <EventGroupChat 
+          eventId={event.id}
+          eventTitle={event.title}
+          xmtpGroupId={event.xmtpGroupId}
+          isOrganizer={event.organizer === address}
+        />
+      </div>
     </div>
   )
 }

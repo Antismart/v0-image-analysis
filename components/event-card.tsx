@@ -16,6 +16,7 @@ interface Event {
   image: string
   isTokenGated: boolean
   attendees: number
+  ticketPrice: number
 }
 
 interface EventCardProps {
@@ -67,6 +68,9 @@ export function EventCard({ event }: EventCardProps) {
         <div className="mt-2 flex items-center gap-2">
           <Users className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400" />
           <span className="text-xs text-muted-foreground tracking-wide font-numeric">{event.attendees} attending</span>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs text-pamoja-500 font-semibold">{event.ticketPrice > 0 ? `${event.ticketPrice} USDC` : "Free"}</span>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">

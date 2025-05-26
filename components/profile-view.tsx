@@ -9,58 +9,31 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useWallet } from "@/context/wallet-context"
 import { useUser } from "@/context/user-context"
+import { useBlockchainUserProfile } from "@/hooks/use-blockchain-profile"
 import { Ticket, Calendar, Award, Settings, ExternalLink } from "lucide-react"
 import { NFTTicketIllustration } from "@/components/illustrations"
+import { NFTTicketCard } from "@/components/nft-ticket-card"
 import { Loading } from "@/components/ui/loading"
 import { SettingsModal } from "@/components/settings-modal"
 
-// Mock data for demonstration
-const mockEvents = [
-  {
-    id: "1",
-    title: "Web3 Developer Meetup",
-    date: "2025-06-15T18:00:00",
-    location: "San Francisco, CA",
-    image: "/placeholder.svg?height=100&width=200",
-  },
-  {
-    id: "2",
-    title: "NFT Art Exhibition",
-    date: "2025-06-20T19:00:00",
-    location: "New York, NY",
-    image: "/placeholder.svg?height=100&width=200",
-  },
-  {
-    id: "3",
-    title: "DeFi Workshop",
-    date: "2025-06-25T14:00:00",
-    location: "Virtual",
-    image: "/placeholder.svg?height=100&width=200",
-  },
-]
-
-const mockTickets = [
-  {
-    id: "1",
-    eventId: "1",
-    eventTitle: "Web3 Developer Meetup",
-    tokenId: "12345",
-    image: "/placeholder.svg?height=300&width=300",
-  },
-  {
-    id: "2",
-    eventId: "2",
-    eventTitle: "NFT Art Exhibition",
-    tokenId: "67890",
-    image: "/placeholder.svg?height=300&width=300",
-  },
-]
-
 export function ProfileView() {
   const { address } = useWallet()
-  const { profile, isLoading } = useUser()
+  const { profile, isLoading: userLoading } = useUser()
+  const { attendingEvents, organizedEvents, tickets, loading: profileLoading, transferTicket } = useBlockchainUserProfile()
   const [activeTab, setActiveTab] = useState("events")
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  const isLoading = userLoading || profileLoading
+
+  const handleTicketTransfer = async (tokenId: string, toAddress: string) => {
+    try {
+      await transferTicket(tokenId, toAddress)
+      // The hook will automatically refresh the tickets list
+    } catch (error) {
+      console.error('Transfer failed:', error)
+      throw error
+    }
+  }
 
   if (isLoading) {
     return (
@@ -136,36 +109,46 @@ export function ProfileView() {
 
         <TabsContent value="events" className="mt-6">
           <h3 className="mb-4 text-xl font-semibold">Events You're Attending</h3>
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {mockEvents.map((event) => (
-              <Link key={event.id} href={`/event/${event.id}`}>
-                <Card className="overflow-hidden transition-all hover:shadow-md h-full">
-                  <div className="aspect-video overflow-hidden">
-                    <Image
-                      src={event.image || "/placeholder.svg"}
-                      alt={event.title}
-                      width={200}
-                      height={100}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <CardHeader className="p-3 sm:p-4 pb-2">
-                    <CardTitle className="line-clamp-1 text-base sm:text-lg">{event.title}</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">{event.location}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-4 pt-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {new Date(event.date).toLocaleDateString(undefined, {
-                        weekday: "long",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {attendingEvents.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <h4 className="mb-2 text-lg font-medium">No events yet</h4>
+              <p className="text-muted-foreground">
+                When you RSVP to events, they'll appear here.
+              </p>
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {attendingEvents.map((event) => (
+                <Link key={event.id} href={`/event/${event.id}`}>
+                  <Card className="overflow-hidden transition-all hover:shadow-md h-full">
+                    <div className="aspect-video overflow-hidden">
+                      <Image
+                        src={event.image || "/placeholder.svg"}
+                        alt={event.title}
+                        width={200}
+                        height={100}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <CardHeader className="p-3 sm:p-4 pb-2">
+                      <CardTitle className="line-clamp-1 text-base sm:text-lg">{event.title}</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm">{event.location}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-3 sm:p-4 pt-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        {new Date(event.date).toLocaleDateString(undefined, {
+                          weekday: "long",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="tickets" className="mt-6">
@@ -173,84 +156,84 @@ export function ProfileView() {
             <h3 className="text-xl font-semibold">Your NFT Tickets</h3>
             <NFTTicketIllustration className="max-w-[150px] sm:max-w-[200px]" />
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {mockTickets.map((ticket) => (
-              <Card key={ticket.id} className="overflow-hidden">
-                <div className="aspect-square overflow-hidden">
-                  <Image
-                    src={ticket.image || "/placeholder.svg"}
-                    alt={ticket.eventTitle}
-                    width={300}
-                    height={300}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="line-clamp-1 text-lg">{ticket.eventTitle}</CardTitle>
-                  <CardDescription>Token ID: {ticket.tokenId}</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Transfer
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {tickets.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Ticket className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <h4 className="mb-2 text-lg font-medium">No tickets yet</h4>
+              <p className="text-muted-foreground">
+                When you attend paid events, your NFT tickets will appear here.
+              </p>
+            </Card>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {tickets.map((ticket) => (
+                <NFTTicketCard 
+                  key={ticket.id} 
+                  ticket={ticket} 
+                  onTransfer={handleTicketTransfer}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="organized" className="mt-6">
           <h3 className="mb-4 text-xl font-semibold">Events You've Organized</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {mockEvents.slice(0, 1).map((event) => (
-              <Link key={event.id} href={`/event/${event.id}`}>
-                <Card className="overflow-hidden transition-all hover:shadow-md">
-                  <div className="aspect-video overflow-hidden">
-                    <Image
-                      src={event.image || "/placeholder.svg"}
-                      alt={event.title}
-                      width={200}
-                      height={100}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="line-clamp-1 text-lg">{event.title}</CardTitle>
-                    <CardDescription>{event.location}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(event.date).toLocaleDateString(undefined, {
-                          weekday: "long",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                      <Badge>Organizer</Badge>
+          {organizedEvents.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Award className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <h4 className="mb-2 text-lg font-medium">No events organized yet</h4>
+              <p className="text-muted-foreground">
+                When you create events, they'll appear here.
+              </p>
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {organizedEvents.map((event) => (
+                <Link key={event.id} href={`/event/${event.id}`}>
+                  <Card className="overflow-hidden transition-all hover:shadow-md">
+                    <div className="aspect-video overflow-hidden">
+                      <Image
+                        src={event.image || "/placeholder.svg"}
+                        alt={event.title}
+                        width={200}
+                        height={100}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
-                  </CardContent>
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="line-clamp-1 text-lg">{event.title}</CardTitle>
+                      <CardDescription>{event.location}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(event.date).toLocaleDateString(undefined, {
+                            weekday: "long",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
+                        <Badge>Organizer</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+
+              <Link href="/create">
+                <Card className="flex h-full flex-col items-center justify-center p-6 transition-all hover:shadow-md">
+                  <div className="mb-4 rounded-full bg-muted p-4">
+                    <Calendar className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium">Create New Event</h3>
+                  <p className="mt-2 text-center text-sm text-muted-foreground">
+                    Organize your next event on Pamoja Events
+                  </p>
                 </Card>
               </Link>
-            ))}
-
-            <Link href="/create">
-              <Card className="flex h-full flex-col items-center justify-center p-6 transition-all hover:shadow-md">
-                <div className="mb-4 rounded-full bg-muted p-4">
-                  <Calendar className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-medium">Create New Event</h3>
-                <p className="mt-2 text-center text-sm text-muted-foreground">
-                  Organize your next event on Pamoja Events
-                </p>
-              </Card>
-            </Link>
-          </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
