@@ -12,7 +12,6 @@ import { EventCheckin } from "@/components/event-checkin"
 import { SocialShare } from "@/components/social-share"
 import { useWallet } from "@/context/wallet-context"
 import { SuccessIllustration } from "@/components/illustrations"
-import EventGroupChat from "@/components/event-group-chat"
 import { useOnChainEvents } from "@/hooks/use-onchain-events"
 import { rsvpToEvent, checkUserRSVP } from "@/hooks/use-blockchain-profile"
 
@@ -283,17 +282,6 @@ export function EventDetails({ id }: EventDetailsProps) {
         eventTitle={event.title}
         organizer={event.organizer}
       />
-
-      {/* XMTP Group Chat */}
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">Event Chat</h2>
-        <EventGroupChat 
-          eventId={event.id}
-          eventTitle={event.title}
-          xmtpGroupId={event.xmtpGroupId}
-          isOrganizer={event.organizer === address}
-        />
-      </div>
     </div>
   )
 }

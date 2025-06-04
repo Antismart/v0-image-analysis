@@ -15,7 +15,6 @@ import { AIChatAssistant } from "@/components/ai-chat-assistant"
 import { ChatIllustration } from "@/components/illustrations"
 import { useOnChainEvents } from "@/hooks/use-onchain-events"
 import { checkUserRSVP } from "@/hooks/use-blockchain-profile"
-import { useEventChatIntegration } from "@/hooks/use-event-chat-integration"
 
 interface ChatMessage {
   id: string
@@ -33,14 +32,6 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   const { address } = useWallet()
   const { events } = useOnChainEvents()
   const { isConnected: isXmtpConnected, connect: connectXmtp, isConnecting, xmtpClient, getUserGroups, sendMessage, streamAllMessages, createGroup, findInboxIdByAddress } = useXMTP()
-  
-  // Use the event chat integration hook for automatic group management
-  const { syncAttendees, getAttendeesCount, isReady, event, groupId } = useEventChatIntegration({
-    eventId,
-    autoSync: true,
-    enableMonitoring: true
-  })
-  
   const [message, setMessage] = useState("")
   const [showAI, setShowAI] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
@@ -51,13 +42,13 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   const [attendeeCount, setAttendeeCount] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Find the current event (use the one from integration hook if available)
-  const currentEvent = event || events.find(e => e.id === eventId)
+  // Find the current event
+  const event = events.find(e => e.id === eventId)
 
   // Check if user has access to the chat (has RSVP'd or bought ticket)
   useEffect(() => {
     const checkChatAccess = async () => {
-      if (!address || !currentEvent) {
+      if (!address || !event) {
         setCheckingAccess(false)
         return
       }
@@ -65,21 +56,10 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
       try {
         // Check if user has RSVP'd or purchased a ticket for this event
         const userHasRSVP = await checkUserRSVP(eventId, address)
-        const isOrganizer = address.toLowerCase() === currentEvent.organizer.toLowerCase()
+        const isOrganizer = address.toLowerCase() === event.organizer.toLowerCase()
         
         // Grant access if user has RSVP'd/bought ticket OR is the organizer
         setHasAccess(userHasRSVP || isOrganizer)
-        
-        // If user has access and integration is ready, sync attendees
-        if ((userHasRSVP || isOrganizer) && isReady) {
-          try {
-            await syncAttendees()
-            const count = await getAttendeesCount()
-            setAttendeeCount(count)
-          } catch (error) {
-            console.error('Error syncing attendees:', error)
-          }
-        }
       } catch (error) {
         console.error('Error checking chat access:', error)
         setHasAccess(false)
@@ -89,17 +69,17 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
     }
 
     checkChatAccess()
-  }, [address, eventId, currentEvent, isReady, syncAttendees, getAttendeesCount])
+  }, [address, eventId, event])
 
   // Find and join the event group chat
   useEffect(() => {
     const findEventGroup = async () => {
-      if (!isXmtpConnected || !hasAccess || !currentEvent?.xmtpGroupId) return
+      if (!isXmtpConnected || !hasAccess || !event?.xmtpGroupId) return
       
       setIsLoadingGroup(true)
       try {
         const groups = await getUserGroups()
-        const group = groups.find(g => g.id === currentEvent.xmtpGroupId)
+        const group = groups.find(g => g.id === event.xmtpGroupId)
         
         if (group) {
           setEventGroup(group)
@@ -123,7 +103,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
     }
 
     findEventGroup()
-  }, [isXmtpConnected, hasAccess, currentEvent?.xmtpGroupId, getUserGroups])
+  }, [isXmtpConnected, hasAccess, event?.xmtpGroupId, getUserGroups])
 
   // Stream messages from the event group
   useEffect(() => {
@@ -252,7 +232,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   }
 
   // Show error if group not found
-  if (!eventGroup && currentEvent?.xmtpGroupId) {
+  if (!eventGroup && event?.xmtpGroupId) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border p-8 text-center space-y-4">
         <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
@@ -272,7 +252,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   }
 
   // Show placeholder if no group ID configured
-  if (!currentEvent?.xmtpGroupId) {
+  if (!event?.xmtpGroupId) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border p-8 text-center space-y-4">
         <ChatIllustration className="mb-6 max-w-[200px]" />
