@@ -33,7 +33,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
   xmtpGroupId, 
   isOrganizer = false 
 }) => {
-  const { xmtpClient, isConnected, connect, createGroup, joinGroup, isConnecting } = useXMTP()
+  const { xmtpClient, isConnected, connect, createGroup, isConnecting } = useXMTP()
   const { address } = useWallet()
   const { toast } = useToast()
   const [messages, setMessages] = useState<Message[]>([])

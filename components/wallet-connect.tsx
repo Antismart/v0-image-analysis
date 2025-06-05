@@ -135,7 +135,7 @@ export function WalletConnect() {
           </div>
 
           <a
-            href={`https://basescan.org/address/${address}`}
+            href={`https://base-sepolia/blockscout.com/address/${address}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"

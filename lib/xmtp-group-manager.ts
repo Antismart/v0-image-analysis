@@ -74,7 +74,7 @@ export async function addAttendeeToGroup(
   }
 
   try {
-    // Find inbox ID for the attendee's address
+    // Find inbox ID for the attendee's address (V3 method)
     const inboxId = await xmtpClient.getInboxIdByAddress(attendeeAddress)
     
     if (!inboxId) {
@@ -85,24 +85,22 @@ export async function addAttendeeToGroup(
     // If no group ID provided, try to get it from the event data
     let eventGroupId = groupId
     if (!eventGroupId) {
-      // In a real implementation, you'd fetch this from your event storage
-      // For now, we'll just log and return
       console.log(`No group ID provided for event ${eventId}`)
       return false
     }
-
+    
     console.log(`Adding attendee ${attendeeAddress} (inbox: ${inboxId}) to group ${eventGroupId}`)
     
-    // Get the group
-    const groups = await xmtpClient.conversations.listGroups()
-    const group = groups.find((g: any) => g.id === eventGroupId)
+    // Get the group conversation (V3 method)
+    const conversations = await xmtpClient.conversations.list()
+    const group = conversations.find((conv: any) => conv.id === eventGroupId && conv.conversationType === 'group')
     
     if (!group) {
       console.error(`Group ${eventGroupId} not found`)
       return false
     }
 
-    // Add the member to the group
+    // Add the member to the group (V3 method)
     await group.addMembers([inboxId])
     console.log(`Successfully added ${attendeeAddress} to group ${eventGroupId}`)
     
@@ -138,39 +136,59 @@ export async function syncGroupMembership(
 
     console.log(`Syncing group membership for ${attendees.length} attendees`)
 
-    // Get the group
-    const groups = await xmtpClient.conversations.listGroups()
-    const group = groups.find((g: any) => g.id === groupId)
+    // Get the group conversation (V3 method)
+    const conversations = await xmtpClient.conversations.list()
+    const group = conversations.find((conv: any) => conv.id === groupId && conv.conversationType === 'group')
     
     if (!group) {
       console.error(`Group ${groupId} not found`)
       return
     }
 
-    // Get current group members
+    // Get current group members (V3 method)
     let currentMembers: string[] = []
     try {
       const memberList = await group.members()
-      currentMembers = memberList.map((member: any) => member.addresses[0]).filter(Boolean)
+      currentMembers = memberList.map((member: any) => member.inboxId).filter(Boolean)
     } catch (error) {
       console.log('Could not get current group members')
     }
 
-    // Find attendees who need to be added
-    const attendeesToAdd = attendees.filter(attendee => 
-      !currentMembers.includes(attendee.toLowerCase())
-    )
+    // Find attendees who need to be added (convert addresses to inbox IDs)
+    const attendeeInboxIds: string[] = []
+    for (const attendee of attendees) {
+      try {
+        const inboxId = await xmtpClient.getInboxIdByAddress(attendee)
+        if (inboxId && !currentMembers.includes(inboxId)) {
+          attendeeInboxIds.push(inboxId)
+        }
+      } catch (error) {
+        console.log(`Could not get inbox ID for ${attendee}`)
+      }
+    }
 
-    if (attendeesToAdd.length === 0) {
+    if (attendeeInboxIds.length === 0) {
       console.log('All attendees are already in the group')
       return
     }
 
-    console.log(`Adding ${attendeesToAdd.length} new attendees to group`)
+    console.log(`Adding ${attendeeInboxIds.length} new attendees to group`)
 
-    // Add each attendee to the group
-    for (const attendee of attendeesToAdd) {
-      await addAttendeeToGroup(eventId, attendee, xmtpClient, groupId)
+    // Add members to the group (V3 batch method)
+    try {
+      await group.addMembers(attendeeInboxIds)
+      console.log(`Successfully added ${attendeeInboxIds.length} members to group ${groupId}`)
+    } catch (error) {
+      console.error('Error adding members to group:', error)
+      // Fallback: try adding members one by one
+      for (const inboxId of attendeeInboxIds) {
+        try {
+          await group.addMembers([inboxId])
+          console.log(`Successfully added member ${inboxId} to group`)
+        } catch (memberError) {
+          console.error(`Failed to add member ${inboxId}:`, memberError)
+        }
+      }
     }
 
   } catch (error) {

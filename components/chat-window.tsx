@@ -32,7 +32,7 @@ interface ChatWindowProps {
 export function ChatWindow({ eventId }: ChatWindowProps) {
   const { address } = useWallet()
   const { events } = useOnChainEvents()
-  const { isConnected: isXmtpConnected, connect: connectXmtp, isConnecting, xmtpClient, getUserGroups, sendMessage, streamAllMessages, createGroup, findInboxIdByAddress } = useXMTP()
+  const { isConnected: isXmtpConnected, connect: connectXmtp, isConnecting, xmtpClient, getUserGroups, sendMessage, streamAllMessages, createGroup, findInboxIdByAddress, inboxId } = useXMTP()
   
   // Use the event chat integration hook for automatic group management
   const { syncAttendees, getAttendeesCount, isReady, event, groupId } = useEventChatIntegration({
@@ -136,7 +136,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
           if (message.conversation?.id === eventGroup.id) {
             const newMessage: ChatMessage = {
               id: message.id,
-              sender: message.senderAddress,
+              sender: message.senderInboxId || message.senderAddress || "unknown", // V3 uses senderInboxId
               content: message.content,
               timestamp: new Date(message.sent),
               isAnnouncement: false // Could add logic to detect announcements
@@ -184,8 +184,13 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   }
 
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  const isOwnMessage = (senderInboxId: string) => {
+    return senderInboxId === inboxId || senderInboxId === address
+  }
+
+  const truncateAddress = (identifier: string) => {
+    if (identifier === inboxId || identifier === address) return "You"
+    return `${identifier.slice(0, 6)}...${identifier.slice(-4)}`
   }
 
   // Show loading state while checking access
@@ -337,21 +342,21 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
                   </div>
                 ) : (
                   realTimeMessages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.sender === address ? "justify-end" : "justify-start"}`}>
+                    <div key={msg.id} className={`flex ${isOwnMessage(msg.sender) ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[85%] sm:max-w-[80%] rounded-lg p-3 ${
-                          msg.sender === address
+                          isOwnMessage(msg.sender)
                             ? "bg-pamoja-500 text-white"
                             : msg.isAnnouncement
                               ? "bg-unity-50 border dark:bg-unity-950/30"
                               : "bg-muted"
                         }`}
                       >
-                        {msg.sender !== address && (
+                        {!isOwnMessage(msg.sender) && (
                           <div className="mb-1 flex items-center gap-2">
                             <Avatar className="h-6 w-6">
                               <AvatarFallback className="bg-unity-200 text-unity-700">
-                                {msg.sender.slice(2, 4)}
+                                {msg.sender.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs font-medium truncate">{truncateAddress(msg.sender)}</span>
@@ -360,7 +365,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
                         <p className="text-sm break-words">{msg.content}</p>
                         <div
                           className={`mt-1 text-right text-xs ${
-                            msg.sender === address ? "text-white/70" : "text-muted-foreground"
+                            isOwnMessage(msg.sender) ? "text-white/70" : "text-muted-foreground"
                           }`}
                         >
                           {formatTime(msg.timestamp)}
@@ -383,7 +388,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
                         <div className="mb-1 flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarFallback className="bg-unity-200 text-unity-700">
-                              {msg.sender.slice(2, 4)}
+                              {msg.sender.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-xs font-medium">{truncateAddress(msg.sender)}</span>

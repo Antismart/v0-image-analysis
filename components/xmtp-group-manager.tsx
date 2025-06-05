@@ -10,14 +10,14 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Copy, Users, MessageCircle, Plus, ExternalLink, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { DecodedMessage, Conversation } from "@xmtp/xmtp-js"
+import type { DecodedMessage, Conversation } from "@xmtp/browser-sdk"
 
-// Define a local interface for Group based on the structure you're using
+// Define a local interface for Group based on the V3 structure
 interface Group {
   id: string
   name?: string
   description?: string
-  members: () => Promise<string[]>
+  members: () => Promise<any[]> // V3 returns member objects with inboxId
 }
 
 interface XMTPGroupManagerProps {

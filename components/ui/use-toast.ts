@@ -1,7 +1,7 @@
 "use client"
 
-// Simplified version of the toast hook
-import { toast as sonnerToast } from "@/components/ui/toast"
+// Simplified version of the toast hook using sonner
+import { toast as sonnerToast } from "sonner"
 
 type ToastProps = {
   title?: string
@@ -11,11 +11,15 @@ type ToastProps = {
 
 export function useToast() {
   const toast = ({ title, description, variant = "default" }: ToastProps) => {
-    sonnerToast({
-      title,
-      description,
-      variant,
-    })
+    if (variant === "destructive") {
+      sonnerToast.error(title || "Error", {
+        description,
+      })
+    } else {
+      sonnerToast.success(title || "Success", {
+        description,
+      })
+    }
   }
 
   return {

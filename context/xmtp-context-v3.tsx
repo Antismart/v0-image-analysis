@@ -61,7 +61,7 @@ function generateDbEncryptionKey(): Uint8Array {
 }
 
 export function XMTPProvider({ children }: { children: React.ReactNode }) {
-  const { isConnected: isWalletConnected, address, getEthers5Signer } = useWallet()
+  const { isConnected: isWalletConnected, address } = useWallet()
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [xmtpClient, setXmtpClient] = useState<any>(null)
@@ -69,60 +69,44 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [inboxId, setInboxId] = useState<string | null>(null)
 
-  // Create a V3 compatible signer from ethers5 signer
+  // Create a signer compatible with V3
   const createV3Signer = useCallback(async () => {
     if (!address || typeof window === 'undefined') return null
 
     try {
-      // Get the ethers5 signer first
-      const ethers5Signer = await getEthers5Signer()
-      if (!ethers5Signer) {
-        throw new Error("No ethers5 signer available")
-      }
+      // Get the wallet provider
+      const provider = (window as any).ethereum
+      if (!provider) throw new Error("No wallet provider found")
 
-      console.log("Creating V3 signer from ethers5 signer...")
-
-      // Wrap the ethers5 signer for V3 compatibility
-      const v3Signer = {
-        type: "EOA" as const,
-        getIdentifier: async () => {
-          const signerAddress = await ethers5Signer.getAddress()
-          return {
-            identifierKind: "Ethereum" as const,
-            identifier: signerAddress,
-          }
-        },
+      const signer = {
+        type: "SCW" as const,
+        getIdentifier: async () => ({
+          identifierKind: "Ethereum" as const,
+          identifier: address,
+        }),
         signMessage: async (message: string) => {
           try {
-            console.log("Signing message with ethers5 signer:", message)
-            const signature = await ethers5Signer.signMessage(message)
-            console.log("Message signed successfully")
-            // Convert hex string to Uint8Array for XMTP V3
-            if (typeof signature === "string" && signature.startsWith("0x")) {
-              return Uint8Array.from(Buffer.from(signature.slice(2), "hex"))
-            }
+            // Request signature from wallet
+            const signature = await provider.request({
+              method: 'personal_sign',
+              params: [message, address],
+            })
             return signature
           } catch (error) {
             console.error("Error signing message:", error)
             throw error
           }
         },
-        getChainId: () => {
-          // Get chain ID from the signer's provider if available
-          if (ethers5Signer.provider && ethers5Signer.provider.network) {
-            return BigInt(ethers5Signer.provider.network.chainId)
-          }
-          return BigInt(84532) // Base Sepolia fallback
-        },
-        getBlockNumber: () => BigInt(0), // Default block number
+        getChainId: () => BigInt(84532), // Base Sepolia
+        getBlockNumber: () => BigInt(0), // Return a default block number
       }
 
-      return v3Signer
+      return signer
     } catch (error) {
       console.error("Error creating V3 signer:", error)
       return null
     }
-  }, [address, getEthers5Signer])
+  }, [address])
 
   // Connect to XMTP V3
   const connect = useCallback(async () => {
@@ -176,7 +160,7 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsConnecting(false)
     }
-  }, [isWalletConnected, address, isConnecting, xmtpClient, createV3Signer, getEthers5Signer])
+  }, [isWalletConnected, address, isConnecting, xmtpClient, createV3Signer])
 
   // Disconnect from XMTP
   const disconnect = useCallback(() => {

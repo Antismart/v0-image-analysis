@@ -912,10 +912,9 @@ export function ChatIllustration({ className }: IllustrationProps) {
           height="30"
           rx="15"
           fill="#f0f0f0"
-          className="dark:fill-gray-700"
+          className="dark:fill-gray-700 dark:stroke-gray-600"
           stroke="#e0e0e0"
           strokeWidth="1"
-          className="dark:stroke-gray-600"
         />
         <circle cx="290" cy="205" r="10" fill="#f97316" />
         <path d="M285 205 L295 205 M290 200 L290 210" stroke="#ffffff" strokeWidth="2" />

@@ -12,7 +12,7 @@ import { Send, Users, MessageCircle, AlertCircle, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 
-interface EventGroupChatProps {
+interface EventGroupChatV3Props {
   eventId: string
   eventTitle: string
   xmtpGroupId?: string
@@ -27,7 +27,11 @@ interface Message {
   senderInboxId?: string
 }
 
-const EventGroupChat: React.FC<EventGroupChatProps> = ({ 
+/**
+ * V3 Event Group Chat Component
+ * Uses native XMTP V3 group functionality instead of DM conversations
+ */
+const EventGroupChatV3: React.FC<EventGroupChatV3Props> = ({ 
   eventId, 
   eventTitle, 
   xmtpGroupId, 
@@ -37,20 +41,20 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
     xmtpClient, 
     isConnected, 
     connect, 
-    createConversation, 
-    getConversations, 
+    createGroup,
+    getUserGroups,
     sendMessage,
     streamAllMessages,
     isConnecting,
-    conversations,
     inboxId,
-    findInboxIdByAddress
+    addMembersToGroup,
+    getGroupById
   } = useXMTP()
   const { address } = useWallet()
   const { toast } = useToast()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
-  const [eventConversation, setEventConversation] = useState<any>(null)
+  const [eventGroup, setEventGroup] = useState<any>(null)
   const [memberCount, setMemberCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
@@ -66,40 +70,52 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
     scrollToBottom()
   }, [messages, scrollToBottom])
 
-  // Find or create event conversation
-  const initializeChat = useCallback(async () => {
-    if (!xmtpClient || !isConnected || !address) return
+  // Find or create event group (V3 native groups)
+  const initializeGroupChat = useCallback(async () => {
+    if (!xmtpClient || !isConnected || !inboxId) return
 
     setIsLoading(true)
     try {
-      // For simplicity, we'll use a hardcoded "event organizer" address for demonstration
-      // In a real app, you'd get this from your event data
-      const eventOrganizerAddress = "0x1234567890123456789012345678901234567890" // Demo address
-      
-      // Check if we already have a conversation with the event organizer
-      const allConversations = await getConversations()
-      let conversation = allConversations.find(conv => 
-        conv.peerAddress.toLowerCase() === eventOrganizerAddress.toLowerCase()
-      )
+      let group = null
 
-      // If no conversation exists and we're the organizer, create one with ourselves
-      if (!conversation && isOrganizer) {
-        // For demo purposes, create a conversation (this would normally be with participants)
-        conversation = await createConversation(eventOrganizerAddress)
+      // Try to find existing group first
+      if (xmtpGroupId) {
+        group = await getGroupById(xmtpGroupId)
+        if (group) {
+          console.log("Found existing group:", xmtpGroupId)
+        }
       }
 
-      if (conversation) {
-        setEventConversation(conversation)
+      // If no group found and user is organizer, create a new one
+      if (!group && isOrganizer) {
+        console.log("Creating new V3 group for event:", eventTitle)
+        group = await createGroup(
+          `${eventTitle} Chat`,
+          `Official group chat for ${eventTitle} event attendees`,
+          [] // Start with empty group, members will be added via group management
+        )
         
-        // Load existing messages from this conversation
+        if (group) {
+          console.log("Created new V3 group:", group.id)
+          toast({
+            title: "Group Created",
+            description: "Event group chat has been created successfully!",
+          })
+        }
+      }
+
+      if (group) {
+        setEventGroup(group)
+        
+        // Load existing messages from the group
         try {
-          const existingMessages = await conversation.messages()
+          const existingMessages = await group.messages()
           const formattedMessages: Message[] = existingMessages.map((msg: any) => ({
-            id: msg.id || `msg-${msg.sent.getTime()}`,
-            sender: msg.senderAddress || msg.senderInboxId || "unknown",
+            id: msg.id || `msg-${msg.sent?.getTime() || Date.now()}`,
+            sender: msg.senderInboxId || "unknown",
             senderInboxId: msg.senderInboxId,
             content: msg.content,
-            timestamp: msg.sent,
+            timestamp: msg.sent || new Date(),
           }))
           
           setMessages(formattedMessages.reverse()) // Reverse to show oldest first
@@ -108,21 +124,21 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
           setMessages([])
         }
 
-        // Set up real-time message streaming
+        // Set up real-time message streaming for this group
         if (streamRef.current) {
           streamRef.current() // Clean up existing stream
         }
 
         try {
           const cleanup = await streamAllMessages((message: any) => {
-            // Only add messages from our event conversation
-            if (message.conversation?.topic === conversation.topic) {
+            // Only add messages from our event group
+            if (message.conversation?.id === group.id) {
               const newMessage: Message = {
-                id: message.id || `msg-${message.sent.getTime()}`,
-                sender: message.senderAddress || message.senderInboxId || "unknown",
+                id: message.id || `msg-${Date.now()}`,
+                sender: message.senderInboxId || "unknown",
                 senderInboxId: message.senderInboxId,
                 content: message.content,
-                timestamp: message.sent,
+                timestamp: message.sent || new Date(),
               }
               
               setMessages(prev => {
@@ -140,37 +156,44 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
           console.error("Error setting up message stream:", error)
         }
 
-        setMemberCount(2) // Simplified: just sender and receiver
+        // Get member count
+        try {
+          const members = await group.members()
+          setMemberCount(members.length)
+        } catch (error) {
+          console.log("Could not get member count")
+          setMemberCount(1) // At least the current user
+        }
         
         toast({
-          title: "Chat Connected",
-          description: "Event chat is ready for real-time messaging!",
+          title: "Group Chat Ready",
+          description: "V3 group chat is ready for real-time messaging!",
         })
         
-        console.log("Real XMTP chat initialized for event:", eventTitle)
+        console.log("V3 group chat initialized for event:", eventTitle)
       } else {
         toast({
-          title: "Chat Not Available",
-          description: "Event chat could not be initialized. Try connecting to XMTP first.",
+          title: "Group Not Available",
+          description: "Event group chat could not be found. Contact the organizer.",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error initializing chat:", error)
+      console.error("Error initializing group chat:", error)
       toast({
-        title: "Chat Error",
-        description: "Failed to initialize event chat.",
+        title: "Group Chat Error",
+        description: "Failed to initialize event group chat.",
         variant: "destructive",
       })
     } finally {
       setIsLoading(false)
     }
-  }, [xmtpClient, isConnected, address, eventTitle, isOrganizer, getConversations, createConversation, streamAllMessages, toast])
+  }, [xmtpClient, isConnected, inboxId, xmtpGroupId, eventTitle, isOrganizer, getGroupById, createGroup, streamAllMessages, toast])
 
-  // Initialize chat when XMTP is connected
+  // Initialize group chat when XMTP is connected
   useEffect(() => {
-    if (isConnected && xmtpClient && !eventConversation && address) {
-      initializeChat()
+    if (isConnected && xmtpClient && !eventGroup && inboxId) {
+      initializeGroupChat()
     }
 
     // Cleanup stream on unmount
@@ -183,20 +206,20 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
         }
       }
     }
-  }, [isConnected, xmtpClient, eventConversation, address, initializeChat])
+  }, [isConnected, xmtpClient, eventGroup, inboxId, initializeGroupChat])
 
-  // Send real XMTP message
+  // Send message to the group
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!eventConversation || !input.trim() || isSending) return
+    if (!eventGroup || !input.trim() || isSending) return
 
     setIsSending(true)
     try {
-      const success = await sendMessage(eventConversation, input)
+      const success = await sendMessage(eventGroup, input)
       
       if (success) {
         setInput("")
-        console.log("Real XMTP message sent:", input)
+        console.log("V3 group message sent:", input)
       } else {
         throw new Error("Failed to send message")
       }
@@ -212,18 +235,15 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
     }
   }
 
-  // Format sender address for display
-  const formatAddress = (addr: string) => {
-    if (!addr) return "Unknown"
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  // Format inbox ID for display
+  const formatInboxId = (inboxId: string) => {
+    if (!inboxId) return "Unknown"
+    return `${inboxId.slice(0, 8)}...${inboxId.slice(-4)}`
   }
 
-  // Check if message is from current user (V3 compatible)
-  const isOwnMessage = (sender: string, senderInboxId?: string) => {
-    // Check both address and inbox ID for V3 compatibility
-    return sender?.toLowerCase() === address?.toLowerCase() || 
-           senderInboxId === inboxId ||
-           sender === inboxId
+  // Check if message is from current user
+  const isOwnMessage = (senderInboxId?: string) => {
+    return senderInboxId === inboxId
   }
 
   return (
@@ -233,7 +253,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-gray-900">Event Chat</h3>
+            <h3 className="font-semibold text-gray-900">Event Group Chat</h3>
           </div>
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="w-3 h-3" />
@@ -272,7 +292,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
               <div>
                 <h4 className="font-medium text-gray-900 mb-2">Connect to XMTP</h4>
                 <p className="text-sm text-gray-600 mb-4">
-                  Connect your wallet to XMTP to join the event chat
+                  Connect your wallet to XMTP to join the event group chat
                 </p>
                 <Button onClick={connect} disabled={isConnecting}>
                   {isConnecting ? "Connecting..." : "Connect to Chat"}
@@ -284,17 +304,17 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center space-y-4">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
-              <p className="text-sm text-gray-600">Setting up event chat...</p>
+              <p className="text-sm text-gray-600">Setting up group chat...</p>
             </div>
           </div>
-        ) : !eventConversation ? (
+        ) : !eventGroup ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center space-y-4">
               <MessageCircle className="w-12 h-12 text-gray-400 mx-auto" />
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Chat Not Available</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Group Chat Not Available</h4>
                 <p className="text-sm text-gray-600">
-                  Event chat could not be initialized
+                  Event group chat could not be found or you don't have access
                 </p>
               </div>
             </div>
@@ -315,25 +335,31 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
                       key={message.id}
                       className={cn(
                         "flex gap-3",
-                        isOwnMessage(message.sender, message.senderInboxId) && "flex-row-reverse"
+                        isOwnMessage(message.senderInboxId) && "flex-row-reverse"
                       )}
                     >
                       <Avatar className="w-8 h-8">
                         <AvatarFallback className="text-xs">
-                          {formatAddress(message.sender).slice(0, 2).toUpperCase()}
+                          {isOwnMessage(message.senderInboxId) 
+                            ? "You" 
+                            : formatInboxId(message.senderInboxId || "").slice(0, 2).toUpperCase()
+                          }
                         </AvatarFallback>
                       </Avatar>
                       <div
                         className={cn(
                           "max-w-[70%] rounded-lg px-3 py-2",
-                          isOwnMessage(message.sender, message.senderInboxId)
+                          isOwnMessage(message.senderInboxId)
                             ? "bg-blue-600 text-white"
                             : "bg-gray-100 text-gray-900"
                         )}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-medium">
-                            {isOwnMessage(message.sender, message.senderInboxId) ? "You" : formatAddress(message.sender)}
+                            {isOwnMessage(message.senderInboxId) 
+                              ? "You" 
+                              : formatInboxId(message.senderInboxId || "")
+                            }
                           </span>
                           <span className="text-xs opacity-70">
                             {message.timestamp.toLocaleTimeString([], { 
@@ -381,4 +407,4 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
   )
 }
 
-export default EventGroupChat
+export default EventGroupChatV3
