@@ -118,13 +118,14 @@ export function NFTTicketCard({ ticket, onTransfer }: NFTTicketCardProps) {
 
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-200">
-      <div className="aspect-square overflow-hidden relative">
+      <div className="aspect-square overflow-hidden relative flex items-center justify-center">
         <Image
           src={ticket.image || "/placeholder.svg"}
           alt={ticket.eventTitle}
           width={300}
           height={300}
-          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+          className="w-full h-full object-contain bg-black/5"
+          style={{objectFit: 'contain'}}
         />
         <div className="absolute top-2 right-2">
           <Badge variant="secondary" className="bg-black/50 text-white">
@@ -165,13 +166,14 @@ export function NFTTicketCard({ ticket, onTransfer }: NFTTicketCardProps) {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="aspect-square overflow-hidden rounded-lg border">
+                <div className="aspect-square overflow-hidden rounded-lg border flex items-center justify-center bg-black/5">
                   <Image
                     src={ticket.image || "/placeholder.svg"}
                     alt={ticket.eventTitle}
                     width={400}
                     height={400}
-                    className="h-full w-full object-cover"
+                    className="w-full h-full object-contain"
+                    style={{objectFit: 'contain'}}
                   />
                 </div>
                 <div className="space-y-2">

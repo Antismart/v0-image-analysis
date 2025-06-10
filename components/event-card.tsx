@@ -5,6 +5,7 @@ import { CalendarIcon, MapPin, Users, Lock } from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useEffect, useRef, useState } from "react"
 
 interface Event {
   id: string
@@ -27,14 +28,47 @@ export function EventCard({ event }: EventCardProps) {
   const eventDate = new Date(event.date)
   const isUpcoming = eventDate > new Date()
 
+  // Dynamic background color extraction
+  const imgRef = useRef<HTMLImageElement>(null)
+  const [bgColor, setBgColor] = useState<string>("#f3f4f6") // fallback neutral
+
+  useEffect(() => {
+    if (!imgRef.current) return
+    const img = imgRef.current
+    const canvas = document.createElement("canvas")
+    canvas.width = 1
+    canvas.height = 1
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 1, 1)
+      const data = ctx.getImageData(0, 0, 1, 1).data
+      setBgColor(`rgb(${data[0]},${data[1]},${data[2]})`)
+    }
+    // If already loaded
+    if (img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, 0, 0, 1, 1)
+      const data = ctx.getImageData(0, 0, 1, 1).data
+      setBgColor(`rgb(${data[0]},${data[1]},${data[2]})`)
+    }
+  }, [event.image])
+
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/30 dark:hover:border-pamoja-800/50 group border-gray-200 hover:border-pamoja-200">
-      <div className="relative aspect-video overflow-hidden">
+      <div className="relative aspect-video overflow-hidden flex items-center justify-center" style={{ background: bgColor }}>
+        <img
+          ref={imgRef}
+          src={event.image || "/placeholder.svg"}
+          alt={event.title}
+          className="absolute w-0 h-0 opacity-0 pointer-events-none"
+        />
         <Image
           src={event.image || "/placeholder.svg"}
           alt={event.title}
           fill
-          className="object-cover transition-transform group-hover:scale-105"
+          className="object-contain w-full h-full"
+          style={{ objectFit: "contain" }}
         />
         {event.isTokenGated && (
           <div className="absolute right-2 top-2">
