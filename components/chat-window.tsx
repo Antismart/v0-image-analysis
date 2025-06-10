@@ -95,16 +95,13 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   useEffect(() => {
     const findEventGroup = async () => {
       if (!isXmtpConnected || !hasAccess || !currentEvent?.xmtpGroupId) return
-      
       setIsLoadingGroup(true)
       try {
         const groups = await getUserGroups()
-        const group = groups.find(g => g.id === currentEvent.xmtpGroupId)
-        
+        let group = groups.find(g => g.id === currentEvent.xmtpGroupId)
         if (group) {
           setEventGroup(group)
           console.log('Found event group:', group.id)
-          
           // Get group member count
           try {
             const memberList = await group.members()
@@ -113,7 +110,33 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
             console.log('Could not get member count')
           }
         } else {
-          console.log('Event group not found, user may need to be added')
+          // If not found and user is organizer, create the group
+          const isOrganizer = address && currentEvent && address.toLowerCase() === currentEvent.organizer.toLowerCase()
+          if (isOrganizer) {
+            try {
+              const groupName = `${currentEvent.title} - Event Chat`
+              const groupDescription = `Discussion group for the event: ${currentEvent.title}`
+              const newGroup = await createGroup(groupName, groupDescription)
+              if (newGroup) {
+                setEventGroup(newGroup)
+                console.log('Created new event group:', newGroup.id)
+                // Optionally: update event.xmtpGroupId in your backend here
+                // Optionally: show a toast or notification
+                try {
+                  const memberList = await newGroup.members()
+                  setAttendeeCount(memberList.length)
+                } catch (error) {
+                  console.log('Could not get member count after creation')
+                }
+              } else {
+                console.warn('Failed to create event group as organizer')
+              }
+            } catch (error) {
+              console.error('Error creating event group as organizer:', error)
+            }
+          } else {
+            console.log('Event group not found, user may need to be added')
+          }
         }
       } catch (error) {
         console.error('Error finding event group:', error)
