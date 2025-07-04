@@ -5,6 +5,7 @@
 
 import { useEffect, useCallback } from 'react'
 import { useXMTP } from '@/context/xmtp-context'
+import { useWallet } from '@/context/wallet-context'
 import { useOnChainEvents } from '@/hooks/use-onchain-events'
 import { getEventAttendees, syncGroupMembership, useAutoGroupManagement } from '@/lib/xmtp-group-manager'
 
@@ -22,6 +23,7 @@ export function useEventChatIntegration({
   enableMonitoring = true
 }: UseEventChatIntegrationProps) {
   const { xmtpClient, isConnected } = useXMTP()
+  const { address } = useWallet()
   const { events } = useOnChainEvents()
   
   // Find the event
@@ -41,10 +43,40 @@ export function useEventChatIntegration({
       console.log(`Syncing attendees for event ${eventId} with group ${groupId}`)
       await syncGroupMembership(eventId, groupId, xmtpClient)
       console.log('Successfully synced group membership')
-    } catch (error) {
-      console.error('Error syncing group membership:', error)
+    } catch (error: any) {
+      // If group not found and user is organizer, create group and retry
+      if (
+        error?.message?.includes('Group') &&
+        error?.message?.includes('not found') &&
+        event &&
+        xmtpClient &&
+        address &&
+        event.organizer?.toLowerCase() === address.toLowerCase()
+      ) {
+        try {
+          console.log('Group not found, creating new group as organizer...')
+          const groupName = `${event.title} - Event Chat`
+          const groupDescription = `Discussion group for the event: ${event.title}`
+          const newGroup = await xmtpClient.conversations.newGroup([], {
+            name: groupName,
+            description: groupDescription,
+          })
+          if (newGroup) {
+            // Optionally: update event.xmtpGroupId in backend here
+            console.log('Created new group:', newGroup.id)
+            await syncGroupMembership(eventId, newGroup.id, xmtpClient)
+            console.log('Successfully synced group membership after group creation')
+          } else {
+            console.warn('Failed to create group as organizer')
+          }
+        } catch (createError) {
+          console.error('Error creating group as organizer:', createError)
+        }
+      } else {
+        console.error('Error syncing group membership:', error)
+      }
     }
-  }, [isConnected, xmtpClient, eventId, groupId])
+  }, [isConnected, xmtpClient, groupId, event, eventId, address])
 
   // Get current attendees count
   const getAttendeesCount = useCallback(async (): Promise<number> => {

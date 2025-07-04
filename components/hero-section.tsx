@@ -13,15 +13,14 @@ export default function HeroSection() {
             <div className="flex items-center gap-3 mb-2 sm:mb-4">
               <Logo size="lg" />
               <div className="h-8 w-px bg-muted"></div>
-              <span className="text-sm tracking-wide text-muted-foreground">Decentralized Events Platform</span>
+              <span className="text-sm tracking-wide text-muted-foreground">Your People. Your Events. Your Way.</span>
             </div>
             <div className="space-y-5 w-full">
               <h1 className="font-display font-extrabold text-balance tracking-tighter text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight text-center lg:text-left">
-                Connect, Coordinate, Create
+                Pamoja – Where Your People Are.
               </h1>
               <p className="max-w-[600px] mx-auto lg:mx-0 text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed text-center lg:text-left">
-                Pamoja Events is a decentralized event platform. Create token-gated events, chat securely
-                with XMTP, and build your web3 community.
+                Bring your people together. Plan events, chat securely, and build lasting connections — all in one place.
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:gap-3 w-full sm:w-auto items-center lg:items-start mt-2">

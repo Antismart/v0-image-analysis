@@ -141,8 +141,9 @@ export async function syncGroupMembership(
     const group = conversations.find((conv: any) => conv.id === groupId && conv.conversationType === 'group')
     
     if (!group) {
-      console.error(`Group ${groupId} not found`)
-      return
+      const errMsg = `Group ${groupId} not found`;
+      console.error(errMsg)
+      throw new Error(errMsg)
     }
 
     // Get current group members (V3 method)

@@ -10,7 +10,7 @@ export default function Footer() {
             <LogoWithText />
           </Link>
           <p className="text-center text-sm text-muted-foreground md:text-left dark:text-muted-foreground/90 tracking-wide">
-            Your go to Onchain event coordination platform
+           Own your events. Connect your community.
           </p>
         </div>
         <div className="flex gap-4">

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { Client } from "@xmtp/browser-sdk"
 import { useWallet } from "@/context/wallet-context"
+import { upsertUser, createGroup as createDbGroup, addUserToGroup, sendMessage as sendDbMessage, getGroupMessages } from '@/lib/group-chat-service'
 
 interface XMTPContextType {
   isConnected: boolean
@@ -357,6 +358,32 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
       return null
     }
   }, [xmtpClient])
+
+  // Example: When a user joins an event chat, ensure they exist in the DB and are added to the group
+  async function ensureUserInDbAndGroup(address: string, groupId: string, groupName: string) {
+    // Upsert user in DB
+    const user = await upsertUser(address)
+    // Upsert group in DB
+    let group = null
+    try {
+      group = await createDbGroup(groupName)
+    } catch (e) {
+      // Group may already exist, ignore error
+    }
+    // Add user to group in DB
+    await addUserToGroup(user.id, groupId)
+  }
+
+  // Example: When sending a message, also store it in the DB
+  async function handleSendMessageDb(senderAddress: string, groupId: string, content: string) {
+    const user = await upsertUser(senderAddress)
+    await sendDbMessage(user.id, groupId, content)
+  }
+
+  // Example: Fetch messages for a group from the DB
+  async function fetchGroupMessagesDb(groupId: string, limit = 50) {
+    return getGroupMessages(groupId, limit)
+  }
 
   return (
     <XMTPContext.Provider 
