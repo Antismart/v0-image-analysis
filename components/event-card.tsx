@@ -18,6 +18,7 @@ interface Event {
   isTokenGated: boolean
   attendees: number
   ticketPrice: number
+  cancelled?: boolean
 }
 
 interface EventCardProps {
@@ -26,7 +27,12 @@ interface EventCardProps {
 
 export function EventCard({ event }: EventCardProps) {
   const eventDate = new Date(event.date)
-  const isUpcoming = eventDate > new Date()
+  const now = new Date()
+  const eventEndDate = new Date(eventDate.getTime() + (24 * 60 * 60 * 1000)) // Assume 24h duration
+  
+  const isUpcoming = eventDate > now
+  const isOngoing = eventDate <= now && eventEndDate > now
+  const isEnded = eventEndDate <= now
 
   // Dynamic background color extraction
   const imgRef = useRef<HTMLImageElement>(null)
@@ -81,13 +87,29 @@ export function EventCard({ event }: EventCardProps) {
             </Badge>
           </div>
         )}
+        {event.cancelled && (
+          <div className="absolute left-2 top-2">
+            <Badge
+              variant="destructive"
+              className="flex items-center gap-1 bg-red-600 text-white badge-text tracking-wide"
+            >
+              CANCELLED
+            </Badge>
+          </div>
+        )}
       </div>
       <CardContent className="p-4">
         <div className="mb-2 flex items-center gap-2">
           <CalendarIcon className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400" />
           <span className="text-xs text-muted-foreground tracking-wide">
-            {isUpcoming ? `In ${formatDistanceToNow(eventDate)}` : `${formatDistanceToNow(eventDate)} ago`}
+            {isOngoing ? "Live now" : isUpcoming ? `In ${formatDistanceToNow(eventDate)}` : `${formatDistanceToNow(eventDate)} ago`}
           </span>
+          {isOngoing && (
+            <div className="flex items-center gap-1">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-xs font-semibold text-green-600 dark:text-green-400">LIVE</span>
+            </div>
+          )}
         </div>
         <h3 className="mb-2 line-clamp-1 font-heading font-semibold text-xl dark:text-white tracking-tight">
           {event.title}
@@ -109,8 +131,18 @@ export function EventCard({ event }: EventCardProps) {
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <Link href={`/event/${event.id}`} className="w-full">
-          <Button variant="default" className="w-full font-medium tracking-wide">
-            View Event
+          <Button 
+            variant={isOngoing ? "default" : isEnded ? "secondary" : "default"} 
+            className={`w-full font-medium tracking-wide ${
+              isOngoing ? "bg-green-600 hover:bg-green-700" : 
+              isEnded ? "opacity-75" : ""
+            } ${event.cancelled ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={event.cancelled}
+          >
+            {event.cancelled ? "Cancelled" : 
+             isOngoing ? "Join Live Event" :
+             isEnded ? "View Event" :
+             "View Event"}
           </Button>
         </Link>
       </CardFooter>
