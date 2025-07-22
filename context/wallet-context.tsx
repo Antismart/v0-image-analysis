@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react"
 import { useAccount, useWalletClient, useConnect, useDisconnect } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { viemWalletClientToEthersSigner } from "@/lib/viem-to-ethers"
@@ -11,6 +11,7 @@ interface WalletContextType {
   address: string | null;
   isConnected: boolean;
   walletClient: any | null;
+  isWalletClientReady: boolean;
   connect: (connector: any) => Promise<void>;
   disconnect: () => void;
   connectors: any[];
@@ -22,6 +23,7 @@ const WalletContext = createContext<WalletContextType>({
   address: null,
   isConnected: false,
   walletClient: null,
+  isWalletClientReady: false,
   connect: async () => {},
   disconnect: () => {},
   connectors: [],
@@ -63,7 +65,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 // Separate component that uses Wagmi hooks only on client side
 function WalletProviderInner({ children }: { children: ReactNode }) {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { data: walletClient, isLoading: isWalletClientLoading } = useWalletClient();
   const { connect, connectors, error, isPending } = useConnect();
   const { disconnect: wagmiDisconnect } = useDisconnect();
   
@@ -74,12 +76,50 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
   // Determine actual connection state from both Wagmi and Privy
   const privyWallet = wallets[0]; // Get the first connected wallet from Privy
   const address = wagmiAddress || privyWallet?.address || null;
-  const isConnected = wagmiConnected || (authenticated && !!privyWallet);
+  
+  // More robust connection check - ensure we have both connection flag and address
+  const isConnected = ((wagmiConnected && !!wagmiAddress) || (authenticated && !!privyWallet?.address)) && !!address;
 
-  // Get the best available wallet client (prefer Wagmi, fallback to Privy)
-  const getActiveWalletClient = () => {
-    return walletClient || null;
-  };
+  // Debug log for connection state
+  useEffect(() => {
+    console.log('Wallet Context State:', {
+      wagmiConnected,
+      wagmiAddress,
+      authenticated,
+      privyWalletAddress: privyWallet?.address,
+      finalAddress: address,
+      finalIsConnected: isConnected,
+      hasAddress: !!address,
+      hasWalletClient: !!walletClient,
+      isWalletClientLoading,
+      walletClientData: walletClient,
+      timestamp: new Date().toISOString()
+    });
+  }, [wagmiConnected, wagmiAddress, authenticated, privyWallet, address, isConnected, walletClient, isWalletClientLoading]);
+
+  // Memoize the active wallet client with better handling
+  const activeWalletClient = useMemo(() => {
+    // Return the wallet client if it exists and we're connected
+    if (walletClient && isConnected && !isWalletClientLoading) {
+      console.log('Active wallet client available:', { 
+        hasClient: !!walletClient, 
+        isConnected, 
+        isLoading: isWalletClientLoading,
+        clientType: walletClient?.transport?.type 
+      });
+      return walletClient;
+    }
+    
+    if (isWalletClientLoading) {
+      console.log('Wallet client is still loading...');
+    } else if (!walletClient) {
+      console.log('No wallet client available');
+    } else if (!isConnected) {
+      console.log('Not connected, wallet client not active');
+    }
+    
+    return null;
+  }, [walletClient, isConnected, isWalletClientLoading]);
 
   // Get Privy ethereum provider when needed
   const getPrivyProvider = async () => {
@@ -109,14 +149,14 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
   };
 
   const getEthersSigner = async () => {
-    const activeClient = getActiveWalletClient();
+    const activeClient = activeWalletClient;
     if (!activeClient) return null;
     return viemWalletClientToEthersSigner(activeClient);
   };
 
   const getEthers5Signer = async () => {
     // First try to use Wagmi wallet client
-    const activeClient = getActiveWalletClient();
+    const activeClient = activeWalletClient;
     if (activeClient) {
       try {
         console.log('Getting ethers5 signer from Wagmi wallet client...');
@@ -159,7 +199,7 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     <WalletContext.Provider value={{ 
       address: address || null, 
       isConnected: !!isConnected, 
-      walletClient: getActiveWalletClient(), 
+      walletClient: activeWalletClient, 
       connect: connectWallet, 
       disconnect, 
       connectors: [...connectors], 
