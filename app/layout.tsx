@@ -51,7 +51,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${inter.variable} ${montserrat.variable} font-sans antialiased`}>
+      <body className={`${outfit.variable} ${inter.variable} ${montserrat.variable} font-sans antialiased`} suppressHydrationWarning>
         <ClientRoot>{children}</ClientRoot>
       </body>
     </html>
