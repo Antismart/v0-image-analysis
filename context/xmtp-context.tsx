@@ -213,24 +213,40 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
 
   // Create a group conversation (V3 native)
   const createGroup = useCallback(async (name: string, description?: string, inboxIds: string[] = []) => {
+    // Check if client exists and is properly initialized
     if (!xmtpClient) {
-      console.error("XMTP client not connected")
+      console.error("XMTP client not available")
+      return null
+    }
+
+    // Additional check to ensure client is ready
+    try {
+      if (!xmtpClient.inboxId) {
+        console.error("XMTP client not properly initialized - missing inbox ID")
+        return null
+      }
+    } catch (error) {
+      console.error("XMTP client not properly initialized:", error)
       return null
     }
 
     try {
-      console.log("Creating group conversation:", name)
+      console.log("Creating group conversation:", name, "with inboxIds:", inboxIds)
       
       const group = await xmtpClient.conversations.newGroup(inboxIds, {
         name: name,
         description: description || '',
       })
       
-      console.log("Group created:", group.id)
+      console.log("Group created successfully:", group.id)
       
       // Update conversations list
-      const convs = await xmtpClient.conversations.list()
-      setConversations(convs)
+      try {
+        const updatedConversations = await xmtpClient.conversations.list()
+        setConversations(updatedConversations)
+      } catch (listError) {
+        console.warn("Could not refresh conversations list:", listError)
+      }
       
       return group
     } catch (error) {
