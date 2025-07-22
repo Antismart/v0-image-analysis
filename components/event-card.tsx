@@ -61,7 +61,7 @@ export function EventCard({ event }: EventCardProps) {
   }, [event.image])
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/30 dark:hover:border-pamoja-800/50 group border-gray-200 hover:border-pamoja-200">
+    <Card className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/30 dark:hover:border-pamoja-800/50 group border-gray-200 hover:border-pamoja-200 h-full flex flex-col light-shadow light-card-hover dark-shadow dark-card-hover">
       <div className="relative aspect-video overflow-hidden flex items-center justify-center" style={{ background: bgColor }}>
         <img
           ref={imgRef}
@@ -80,10 +80,11 @@ export function EventCard({ event }: EventCardProps) {
           <div className="absolute right-2 top-2">
             <Badge
               variant="secondary"
-              className="flex items-center gap-1 bg-unity-600 text-white badge-text dark:bg-unity-700 tracking-wide"
+              className="flex items-center gap-1 bg-unity-600 text-white text-xs dark:bg-unity-700 tracking-wide"
             >
               <Lock className="h-3 w-3" />
-              Token-Gated
+              <span className="hidden sm:inline">Token-Gated</span>
+              <span className="sm:hidden">Gated</span>
             </Badge>
           </div>
         )}
@@ -91,16 +92,16 @@ export function EventCard({ event }: EventCardProps) {
           <div className="absolute left-2 top-2">
             <Badge
               variant="destructive"
-              className="flex items-center gap-1 bg-red-600 text-white badge-text tracking-wide"
+              className="flex items-center gap-1 bg-red-600 text-white text-xs tracking-wide"
             >
               CANCELLED
             </Badge>
           </div>
         )}
       </div>
-      <CardContent className="p-4">
-        <div className="mb-2 flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400" />
+      <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
+        <div className="mb-2 flex items-center gap-2 flex-wrap">
+          <CalendarIcon className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400 flex-shrink-0" />
           <span className="text-xs text-muted-foreground tracking-wide">
             {isOngoing ? "Live now" : isUpcoming ? `In ${formatDistanceToNow(eventDate)}` : `${formatDistanceToNow(eventDate)} ago`}
           </span>
@@ -111,29 +112,33 @@ export function EventCard({ event }: EventCardProps) {
             </div>
           )}
         </div>
-        <h3 className="mb-2 line-clamp-1 font-heading font-semibold text-xl dark:text-white tracking-tight">
+        <h3 className="mb-2 line-clamp-2 font-heading font-semibold text-lg sm:text-xl dark:text-white tracking-tight">
           {event.title}
         </h3>
-        <p className="mb-4 line-clamp-2 text-sm text-muted-foreground dark:text-muted-foreground/90 leading-relaxed">
+        <p className="mb-4 line-clamp-2 sm:line-clamp-3 text-sm text-muted-foreground dark:text-muted-foreground/90 leading-relaxed flex-1">
           {event.description}
         </p>
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400" />
-          <span className="text-xs text-muted-foreground tracking-wide">{event.location}</span>
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <Users className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400" />
-          <span className="text-xs text-muted-foreground tracking-wide font-numeric">{event.attendees} attending</span>
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-xs text-pamoja-500 font-semibold">{event.ticketPrice > 0 ? `${event.ticketPrice} USDC` : "Free"}</span>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400 flex-shrink-0" />
+            <span className="text-xs text-muted-foreground tracking-wide truncate">{event.location}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-pamoja-500 dark:text-pamoja-400 flex-shrink-0" />
+              <span className="text-xs text-muted-foreground tracking-wide font-numeric">{event.attendees} attending</span>
+            </div>
+            <span className="text-xs text-pamoja-500 font-semibold">
+              {event.ticketPrice > 0 ? `${event.ticketPrice} USDC` : "Free"}
+            </span>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-3 sm:p-4 pt-0">
         <Link href={`/event/${event.id}`} className="w-full">
           <Button 
             variant={isOngoing ? "default" : isEnded ? "secondary" : "default"} 
-            className={`w-full font-medium tracking-wide ${
+            className={`w-full font-medium tracking-wide text-sm ${
               isOngoing ? "bg-green-600 hover:bg-green-700" : 
               isEnded ? "opacity-75" : ""
             } ${event.cancelled ? "opacity-50 cursor-not-allowed" : ""}`}
