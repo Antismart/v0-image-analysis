@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 98%; /* Slightly off-white for better contrast */
     --foreground: 20 14.3% 4.1%;
 
-    --card: 0 0% 100%;
+    --card: 0 0% 100%; /* Pure white cards */
     --card-foreground: 20 14.3% 4.1%;
 
     --popover: 0 0% 100%;
@@ -19,55 +19,65 @@
     --secondary: 162 84% 39%; /* Unity Teal */
     --secondary-foreground: 60 9.1% 97.8%;
 
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
+    --muted: 60 4.8% 95%; /* Slightly darker muted for better contrast */
+    --muted-foreground: 25 5.3% 40%; /* Better contrast */
 
-    --accent: 24 94% 93%; /* Light Pamoja Orange */
-    --accent-foreground: 24 94% 20%;
+    --accent: 24 94% 96%; /* Very light Pamoja Orange */
+    --accent-foreground: 24 94% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 60 9.1% 97.8%;
 
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
+    --border: 20 5.9% 88%; /* Slightly more visible borders */
+    --input: 20 5.9% 96%; /* Light input background */
     --ring: 24 94% 53%;
 
     --radius: 0.75rem;
+
+    /* Enhanced light mode colors */
+    --light-card-elevated: 0 0% 99%;
+    --light-card-hover: 0 0% 97%;
+    --light-surface: 60 4.8% 96%;
+    --light-surface-elevated: 0 0% 99%;
+    --light-subtle-accent: 24 50% 95%;
   }
 
   .dark {
-    --background: 20 14.3% 4.1%;
+    --background: 16 14.3% 3.5%; /* Darker background */
     --foreground: 60 9.1% 97.8%;
 
-    --card: 20 14.3% 4.5%;
+    --card: 20 14.3% 7%; /* Lighter cards for contrast */
     --card-foreground: 60 9.1% 97.8%;
 
-    --popover: 20 14.3% 4.5%;
+    --popover: 20 14.3% 7%;
     --popover-foreground: 60 9.1% 97.8%;
 
-    --primary: 24 94% 53%; /* Pamoja Orange */
+    --primary: 24 94% 58%; /* Slightly brighter primary for dark mode */
     --primary-foreground: 60 9.1% 97.8%;
 
-    --secondary: 162 84% 39%; /* Unity Teal */
+    --secondary: 162 84% 45%; /* Slightly brighter secondary for dark mode */
     --secondary-foreground: 60 9.1% 97.8%;
 
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 73.9%; /* Increased brightness for better readability */
+    --muted: 12 6.5% 12%; /* Darker muted background */
+    --muted-foreground: 24 5.4% 75%; /* Better contrast */
 
-    --accent: 24 94% 12%; /* Darker accent for dark mode */
+    --accent: 24 94% 15%; /* Darker accent for dark mode */
     --accent-foreground: 60 9.1% 97.8%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 50%; /* Brighter destructive for visibility */
     --destructive-foreground: 60 9.1% 97.8%;
 
-    --border: 12 6.5% 18.1%; /* Slightly brighter border */
-    --input: 12 6.5% 18.1%;
-    --ring: 24 94% 53%;
+    --border: 12 6.5% 15%; /* Subtle borders */
+    --input: 12 6.5% 10%; /* Darker inputs */
+    --ring: 24 94% 58%;
 
-    /* Custom dark mode colors */
-    --dark-card-hover: 20 14.3% 8%;
-    --dark-highlight: 24 94% 15%;
-    --dark-subtle-accent: 24 70% 20%;
+    /* Enhanced dark mode colors */
+    --dark-card-hover: 20 14.3% 10%;
+    --dark-card-elevated: 20 14.3% 9%;
+    --dark-highlight: 24 94% 18%;
+    --dark-subtle-accent: 24 70% 25%;
+    --dark-surface: 16 14.3% 5%;
+    --dark-surface-elevated: 20 14.3% 6%;
   }
 }
 
@@ -210,6 +220,29 @@
     letter-spacing: -0.01em;
   }
 
+  /* Touch-Friendly Interactions */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] p-2;
+  }
+
+  .touch-button {
+    @apply py-3 px-4 sm:py-2 sm:px-3 text-base sm:text-sm;
+  }
+
+  /* Additional Responsive Utilities */
+  .responsive-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .responsive-margin {
+    @apply mx-4 sm:mx-6 lg:mx-8;
+  }
+
+  .responsive-text {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+  
+
   /* Display text for special elements */
   .display-text {
     @apply font-montserrat font-bold tracking-tighter;
@@ -295,6 +328,29 @@
 }
 
 /* Add these responsive media queries for more specific adjustments */
+@media (max-width: 480px) {
+  h1 {
+    font-size: clamp(1.75rem, 7vw, 2.5rem);
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: clamp(1.25rem, 5vw, 1.875rem);
+    line-height: 1.3;
+  }
+
+  .hero-heading {
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.1;
+  }
+
+  /* Improve small mobile spacing */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
 @media (max-width: 640px) {
   h1 {
     font-size: clamp(2rem, 8vw, 3rem);
@@ -309,6 +365,24 @@
   .hero-heading {
     font-size: clamp(2.25rem, 10vw, 3.5rem);
     line-height: 1.1;
+  }
+
+  /* Better mobile form styling */
+  input, textarea, select {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+  }
+
+  /* Enhanced mobile card spacing */
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  /* Better mobile button sizing */
+  .btn-mobile {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 }
 
@@ -333,6 +407,73 @@
 
 /* Add these dark mode specific utility classes */
 @layer utilities {
+  /* Light mode utilities */
+  .light-surface {
+    @apply bg-[hsl(var(--light-surface))];
+  }
+
+  .light-surface-elevated {
+    @apply bg-[hsl(var(--light-surface-elevated))];
+  }
+
+  .light-card-elevated {
+    @apply bg-[hsl(var(--light-card-elevated))];
+  }
+
+  .light-card-hover {
+    @apply hover:bg-[hsl(var(--light-card-hover))];
+  }
+
+  .light-shadow {
+    @apply shadow-lg hover:shadow-xl transition-shadow duration-300;
+  }
+
+  .light-shadow-elevated {
+    @apply shadow-xl hover:shadow-2xl transition-shadow duration-300;
+  }
+
+  .light-border {
+    @apply border border-gray-200;
+  }
+
+  .light-border-subtle {
+    @apply border border-gray-100;
+  }
+
+  /* Light mode specific text contrast */
+  .light-text-enhanced {
+    @apply text-gray-900;
+  }
+
+  .light-text-muted {
+    @apply text-gray-600;
+  }
+
+  .light-text-subtle {
+    @apply text-gray-500;
+  }
+
+  .light-text-secondary {
+    @apply text-gray-700;
+  }
+
+  .light-shadow-interactive {
+    @apply shadow-md hover:shadow-lg transition-shadow duration-300;
+  }
+
+  /* Dark mode utilities */
+  .dark-surface {
+    @apply dark:bg-[hsl(var(--dark-surface))];
+  }
+
+  .dark-surface-elevated {
+    @apply dark:bg-[hsl(var(--dark-surface-elevated))];
+  }
+
+  .dark-card-elevated {
+    @apply dark:bg-[hsl(var(--dark-card-elevated))];
+  }
+
   .dark-card-hover {
     @apply hover:bg-[hsl(var(--dark-card-hover))];
   }
@@ -346,42 +487,45 @@
   }
 
   .dark-shadow {
-    @apply dark:shadow-[0_4px_12px_rgba(0,0,0,0.5)];
+    @apply dark:shadow-[0_8px_25px_rgba(0,0,0,0.6)];
+  }
+
+  .dark-shadow-elevated {
+    @apply dark:shadow-[0_12px_35px_rgba(0,0,0,0.7)];
   }
 
   /* Improved dark mode text contrast */
   .dark-text-enhanced {
-    @apply dark:text-white dark:text-opacity-90;
+    @apply dark:text-white dark:text-opacity-95;
   }
 
   .dark-text-muted {
-    @apply dark:text-white dark:text-opacity-70;
+    @apply dark:text-white dark:text-opacity-75;
+  }
+
+  .dark-text-subtle {
+    @apply dark:text-white dark:text-opacity-60;
+  }
+
+  .dark-text-secondary {
+    @apply dark:text-white dark:text-opacity-80;
+  }
+
+  .dark-shadow-sm {
+    @apply dark:shadow-[0_4px_15px_rgba(0,0,0,0.5)];
+  }
+
+  .dark-shadow-interactive {
+    @apply dark:shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:dark:shadow-[0_8px_25px_rgba(0,0,0,0.7)] transition-shadow duration-300;
   }
 
   /* Dark mode specific brand colors */
   .dark-pamoja {
-    @apply dark:bg-pamoja-600 dark:text-white;
+    @apply dark:bg-primary dark:text-primary-foreground;
   }
 
   .dark-unity {
-    @apply dark:bg-unity-600 dark:text-white;
-  }
-
-  .light-shadow {
-    @apply shadow-md hover:shadow-lg transition-shadow;
-  }
-
-  .light-border {
-    @apply border border-gray-200;
-  }
-
-  /* Light mode specific text contrast */
-  .light-text-enhanced {
-    @apply text-gray-900;
-  }
-
-  .light-text-muted {
-    @apply text-gray-500;
+    @apply dark:bg-secondary dark:text-secondary-foreground;
   }
 
   /* Enhanced typography utilities */
@@ -456,9 +600,119 @@
 
 /* Add these custom dark mode styles for specific components */
 @layer components {
-  .dark .card {
+  /* Enhanced light mode styles */
+  .light .card {
+    background-color: hsl(var(--card));
     border-color: hsl(var(--border));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 2px 4px rgba(0, 0, 0, 0.04),
+      0 0 0 1px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+  }
+
+  .light .card:hover {
+    background-color: hsl(var(--light-card-hover));
+    box-shadow: 
+      0 8px 25px rgba(0, 0, 0, 0.12),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+  }
+
+  .light input,
+  .light textarea,
+  .light select {
+    background-color: hsl(var(--input));
+    border-color: hsl(var(--border));
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .light input:focus,
+  .light textarea:focus,
+  .light select:focus {
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 
+      inset 0 1px 2px rgba(0, 0, 0, 0.03),
+      0 0 0 2px hsl(var(--primary) / 0.1),
+      0 0 0 3px hsl(var(--primary) / 0.3);
+  }
+
+  .light .button-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%);
+    color: white;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .light .button-primary:hover {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.95) 0%, hsl(var(--primary) / 0.85) 100%);
+    box-shadow: 
+      0 4px 14px rgba(0, 0, 0, 0.15),
+      0 2px 4px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .light *:focus-visible {
+    outline: none;
+    --tw-ring-color: hsl(var(--primary) / 0.5);
+    --tw-ring-offset-width: 2px;
+    --tw-ring-offset-color: hsl(var(--background));
+    --tw-ring-opacity: 0.6;
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+  }
+
+  /* Enhanced light mode background patterns */
+  .light body {
+    background: 
+      radial-gradient(circle at 25% 25%, hsl(var(--primary) / 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, hsl(var(--secondary) / 0.03) 0%, transparent 50%),
+      hsl(var(--background));
+    background-attachment: fixed;
+  }
+
+  /* Light mode navigation enhancements */
+  .light .navbar {
+    background-color: hsl(var(--card) / 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid hsl(var(--border));
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Light mode dashboard specific styles */
+  .light .dashboard-background {
+    background: 
+      radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 80% 80%, hsl(var(--secondary) / 0.04) 0%, transparent 40%),
+      linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--light-surface)) 100%);
+  }
+
+  /* Dark mode styles */
+  .dark .card {
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border));
+    box-shadow: 
+      0 8px 25px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .dark .card:hover {
+    background-color: hsl(var(--dark-card-hover));
+    box-shadow: 
+      0 12px 35px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
   }
 
   .dark input,
@@ -466,24 +720,66 @@
   .dark select {
     background-color: hsl(var(--input));
     border-color: hsl(var(--border));
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark input:focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    background-color: hsl(var(--card));
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.2),
+      0 0 0 2px hsl(var(--primary) / 0.5);
   }
 
   .dark .button-primary {
-    background-color: hsl(var(--primary));
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
     color: white;
+    box-shadow: 
+      0 4px 14px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   .dark .button-primary:hover {
-    background-color: hsl(var(--primary) / 0.9);
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.9) 0%, hsl(var(--primary) / 0.7) 100%);
+    box-shadow: 
+      0 6px 20px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
   }
 
   .dark *:focus-visible {
     outline: none;
     --tw-ring-color: hsl(var(--primary) / 0.7);
     --tw-ring-offset-width: 2px;
-    --tw-ring-offset-color: transparent;
-    --tw-ring-opacity: 0.7;
+    --tw-ring-offset-color: hsl(var(--background));
+    --tw-ring-opacity: 0.8;
     box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+  }
+
+  /* Enhanced dark mode background patterns */
+  .dark body {
+    background: 
+      radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--secondary) / 0.05) 0%, transparent 50%),
+      hsl(var(--background));
+    background-attachment: fixed;
+  }
+
+  /* Dark mode navigation enhancements */
+  .dark .navbar {
+    background-color: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid hsl(var(--border));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Dark mode dashboard specific styles */
+  .dark .dashboard-background {
+    background: 
+      radial-gradient(circle at 25% 25%, hsl(var(--primary) / 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 75% 75%, hsl(var(--secondary) / 0.08) 0%, transparent 40%),
+      hsl(var(--background));
   }
 }
 
@@ -605,4 +901,20 @@
 
 .dark .animate-pulse-border {
   animation: pulse-border-dark 2s ease-in-out infinite;
+}
+
+/* Hide problematic wallet extension overlays that might show incorrect balances */
+.wallet-extension-overlay,
+.metamask-balance-overlay,
+.crypto-wallet-balance,
+[data-testid*="balance"],
+[class*="balance-display"]:not([class*="wallet-balance-display"]) {
+  display: none !important;
+}
+
+/* Ensure our custom wallet components are always visible */
+.wallet-balance-display,
+.compact-wallet-balance {
+  display: block !important;
+  visibility: visible !important;
 }
