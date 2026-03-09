@@ -18,7 +18,9 @@ import { LoadingButton } from "@/components/ui/loading"
 import { useWallet } from "@/context/wallet-context"
 import { useXMTP } from "@/context/xmtp-context"
 import { getEventContract, publicClient } from "@/lib/contract"
+import { baseSepolia } from "@/lib/base-sepolia"
 import { parseEther } from "@/lib/parse-ether"
+import type { OnChainEvent } from "@/hooks/use-onchain-events"
 
 // Add types for schedule and speakers
 interface ScheduleItem {
@@ -33,7 +35,26 @@ interface SpeakerItem {
   avatar?: string; // URL or base64
 }
 
-export function EventForm({ mode = "create", eventData }: { mode?: "create" | "edit"; eventData?: any }) {
+interface EventFormData {
+  title?: string;
+  description?: string;
+  date?: string;
+  time?: string;
+  location?: string;
+  capacity?: number;
+  banner?: string;
+  isTokenGated?: boolean;
+  isNftTicket?: boolean;
+  ticketPrice?: string;
+  ticketName?: string;
+  tokenAddress?: string;
+  tokenAmount?: string;
+  xmtpGroupId?: string;
+  schedule?: ScheduleItem[];
+  speakers?: SpeakerItem[];
+}
+
+export function EventForm({ mode = "create", eventData }: { mode?: "create" | "edit"; eventData?: EventFormData }) {
   const router = useRouter()
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [isTokenGated, setIsTokenGated] = useState(false)
@@ -54,8 +75,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
   useEffect(() => {
     if (mode === "edit" && eventData) {
       setDate(eventData.date ? new Date(eventData.date) : undefined)
-      setIsTokenGated(eventData.isTokenGated)
-      setIsNftTicket(eventData.isNftTicket)
+      setIsTokenGated(!!eventData.isTokenGated)
+      setIsNftTicket(!!eventData.isNftTicket)
       setEnableChat(eventData.xmtpGroupId ? true : false)
     }
   }, [mode, eventData])
@@ -63,7 +84,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Check wallet connection
     if (!isConnected || !address) {
       setIsSubmitting(false);
@@ -71,29 +92,18 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       return;
     }
 
-    // Debug wallet state more thoroughly
-    console.log("Full wallet state debug:", { 
-      isConnected, 
-      walletClient: !!walletClient, 
-      address,
-      walletType: walletClient?.transport?.type,
-      walletClientKeys: walletClient ? Object.keys(walletClient) : [],
-      timestamp: new Date().toISOString()
-    });
-
     // Wait a moment for wallet client to be ready if needed
     if (!walletClient) {
-      console.log("Wallet client not immediately available, waiting...");
-      // Wait up to 3 seconds for wallet client to become available
+      const WALLET_READY_TIMEOUT_MS = 3000;
+      const WALLET_POLL_INTERVAL_MS = 100;
+      const maxAttempts = Math.ceil(WALLET_READY_TIMEOUT_MS / WALLET_POLL_INTERVAL_MS);
       let attempts = 0;
-      const maxAttempts = 30; // 3 seconds with 100ms intervals
-      
+
       while (!walletClient && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, WALLET_POLL_INTERVAL_MS));
         attempts++;
-        console.log(`Waiting for wallet client... attempt ${attempts}`);
       }
-      
+
       if (!walletClient) {
         setIsSubmitting(false);
         alert("Wallet client not available. Please reconnect your wallet and try again.");
@@ -117,25 +127,18 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       return;
     }
 
-    console.log("Wallet signer ready, proceeding with event creation...");
     let imageUrl = eventData?.banner || '';
-    let uploadedIpfsUrl = '';
     if (bannerFile) {
       const formData = new FormData();
       formData.append('file', bannerFile);
       try {
-        const res = await fetch('/api/uploadToPinata', {
+        const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
         const data = await res.json();
         if (data.ipfsUrl) {
           imageUrl = data.ipfsUrl;
-          uploadedIpfsUrl = data.ipfsUrl;
-          // Show the IPFS hash to the user (for debugging/confirmation)
-          alert(`Image uploaded to Pinata! IPFS URL: ${uploadedIpfsUrl}\nHash: ${uploadedIpfsUrl.split('/ipfs/')[1]}`);
-          // Optionally, also log to console
-          console.log('Pinata IPFS URL:', uploadedIpfsUrl);
         }
       } catch (err) {
         setIsSubmitting(false);
@@ -161,44 +164,35 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       let ticketPrice = BigInt(0);
       let usdcToken = '0x0000000000000000000000000000000000000000';
       let xmtpGroupId = '';
-      
+
       // NFT ticketing
       if (isNftTicket) {
-        const ticketPriceUsd = (document.getElementById('ticket-price') as HTMLInputElement)?.value || '0';
         // USDC address for Base Sepolia testnet
         usdcToken = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
-        // If using USDC, ticketPrice should be in 6 decimals (USDC has 6 decimals)
-        if (isNftTicket) {
-          const ticketPriceUsd = (document.getElementById('ticket-price') as HTMLInputElement)?.value || '0';
-          // Convert to 6 decimals for USDC
-          ticketPrice = BigInt(Math.floor(Number(ticketPriceUsd) * 1_000_000));
-        }
+        const ticketPriceUsd = (document.getElementById('ticket-price') as HTMLInputElement)?.value || '0';
+        // Convert to 6 decimals for USDC
+        ticketPrice = BigInt(Math.floor(Number(ticketPriceUsd) * 1_000_000));
       }
-      
+
       // XMTP Group Creation
       if (enableChat) {
         try {
           // Connect to XMTP if not already connected
           if (!isXmtpConnected) {
-            console.log("Connecting to XMTP for group creation...");
             await connectXMTP();
           }
-          
+
           // Create group for the event
           const groupName = `${title} - Event Chat`;
           const groupDescription = `Discussion group for the event: ${title}`;
           const group = await createGroup(groupName, groupDescription);
-          
+
           if (group) {
             xmtpGroupId = group.id;
-            console.log("XMTP group created successfully:", xmtpGroupId);
-          } else {
-            console.warn("Failed to create XMTP group, proceeding without chat");
           }
         } catch (error) {
           console.error("Error creating XMTP group:", error);
           // Continue with event creation even if group creation fails
-          console.warn("Proceeding with event creation without chat group");
         }
       }
       // Call contract
@@ -229,37 +223,24 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
 
       // Final check to ensure wallet client is still available
       if (!walletClient) {
-        console.error("Wallet client validation failed at contract call time");
-        console.log("Final wallet state:", { 
-          isConnected, 
-          address, 
-          walletClient: !!walletClient,
-          walletClientDetails: walletClient
-        });
         throw new Error("Wallet client is no longer available");
       }
-
-      console.log("Calling writeContract with:", {
-        address: contract.address,
-        functionName: 'createEvent',
-        args,
-        chain: contract.client.chain
-      });
 
       const txHash = await walletClient.writeContract({
         address: contract.address,
         abi: contract.abi,
         functionName: 'createEvent',
         args,
-        chain: contract.client.chain,
+        chain: baseSepolia,
+        account: address as `0x${string}`,
       });
 
-      console.log("Transaction submitted:", txHash);
       setIsSubmitting(false);
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsSubmitting(false);
-      alert('Failed to create event: ' + (err?.message || err));
+      const message = err instanceof Error ? err.message : String(err);
+      alert('Failed to create event: ' + message);
     }
   }
 
@@ -290,7 +271,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch('/api/uploadToPinata', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -298,8 +279,6 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       if (data.ipfsUrl) {
         // Update the speaker avatar with the Pinata IPFS URL
         setSpeakers((prev) => prev.map((s, i) => i === idx ? { ...s, avatar: data.ipfsUrl } : s));
-        alert(`Speaker image uploaded! IPFS URL: ${data.ipfsUrl}\nHash: ${data.ipfsUrl.split('/ipfs/')[1]}`);
-        console.log('Speaker Pinata IPFS URL:', data.ipfsUrl);
       }
     } catch (err) {
       alert('Speaker image upload failed. Please try again.');
@@ -324,12 +303,12 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
           <Label htmlFor="title" className="form-label">
             Event Title
           </Label>
-          <Input 
-            id="title" 
-            placeholder="Enter event title" 
-            required 
-            className="mt-1.5 text-base sm:text-sm" 
-            defaultValue={eventData?.title} 
+          <Input
+            id="title"
+            placeholder="Enter event title"
+            required
+            className="mt-1.5 text-base sm:text-sm"
+            defaultValue={eventData?.title}
           />
         </div>
 
@@ -354,7 +333,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal mt-1.5 text-sm h-11 sm:h-10", 
+                    "w-full justify-start text-left font-normal mt-1.5 text-sm h-11 sm:h-10",
                     !date && "text-muted-foreground"
                   )}
                 >
@@ -374,12 +353,12 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
             </Label>
             <div className="relative mt-1.5">
               <Clock className="absolute left-3 top-3.5 sm:top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                id="time" 
-                type="time" 
-                className="pl-10 h-11 sm:h-10 text-base sm:text-sm" 
-                required 
-                defaultValue={eventData?.time} 
+              <Input
+                id="time"
+                type="time"
+                className="pl-10 h-11 sm:h-10 text-base sm:text-sm"
+                required
+                defaultValue={eventData?.time}
               />
             </div>
           </div>
@@ -391,12 +370,12 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
           </Label>
           <div className="relative mt-1.5">
             <MapPin className="absolute left-3 top-3.5 sm:top-3 h-4 w-4 text-muted-foreground" />
-            <Input 
-              id="location" 
-              placeholder="Event location or 'Virtual'" 
-              className="pl-10 h-11 sm:h-10 text-base sm:text-sm" 
-              required 
-              defaultValue={eventData?.location} 
+            <Input
+              id="location"
+              placeholder="Event location or 'Virtual'"
+              className="pl-10 h-11 sm:h-10 text-base sm:text-sm"
+              required
+              defaultValue={eventData?.location}
             />
           </div>
         </div>
@@ -425,10 +404,10 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
           </Label>
           <div className="mt-1.5 flex flex-col items-center justify-center rounded-lg border border-dashed p-4 sm:p-6 md:p-8 min-h-[120px] sm:min-h-[160px]">
             {bannerPreview && (
-              <img 
-                src={bannerPreview} 
-                alt="Event banner preview" 
-                className="mb-4 max-h-24 sm:max-h-32 md:max-h-48 lg:max-h-64 w-full rounded-lg object-cover" 
+              <img
+                src={bannerPreview}
+                alt="Event banner preview"
+                className="mb-4 max-h-24 sm:max-h-32 md:max-h-48 lg:max-h-64 w-full rounded-lg object-cover"
               />
             )}
             <div className="space-y-1 text-center max-w-xs sm:max-w-sm">
@@ -537,7 +516,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
               </ul>
               {!isXmtpConnected && (
                 <p className="text-xs sm:text-sm text-orange-600 bg-orange-50 dark:bg-orange-950/20 p-2 rounded">
-                  ⚠️ XMTP connection will be established when the event is created
+                  XMTP connection will be established when the event is created
                 </p>
               )}
             </div>
@@ -572,11 +551,11 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
                     onChange={e => handleScheduleChange(idx, "description", e.target.value)}
                     className="flex-1"
                   />
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => removeScheduleItem(idx)} 
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeScheduleItem(idx)}
                     aria-label="Remove schedule item"
                     className="flex-shrink-0"
                   >
@@ -612,7 +591,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
                     />
                   </div>
                 </div>
-                
+
                 <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <Label className="text-sm text-muted-foreground">Name</Label>
@@ -641,11 +620,11 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
                         onChange={e => handleSpeakerChange(idx, "bio", e.target.value)}
                         className="flex-1"
                       />
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => removeSpeaker(idx)} 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeSpeaker(idx)}
                         aria-label="Remove speaker"
                         className="flex-shrink-0"
                       >
@@ -663,10 +642,10 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
         </div>
       </div>
 
-      <LoadingButton 
-        type="submit" 
-        className="w-full text-base py-4 sm:py-3 md:py-2 font-medium" 
-        loading={isSubmitting} 
+      <LoadingButton
+        type="submit"
+        className="w-full text-base py-4 sm:py-3 md:py-2 font-medium"
+        loading={isSubmitting}
         loadingText="Creating Event..."
       >
         Create Event
