@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { useXMTP } from "@/context/xmtp-context"
+import { useXMTP, type XMTPConversation } from "@/context/xmtp-context"
 import { useWallet } from "@/context/wallet-context"
 import { AIChatAssistant } from "@/components/ai-chat-assistant"
 import { ChatIllustration } from "@/components/illustrations"
@@ -46,7 +46,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   const [showAI, setShowAI] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
   const [checkingAccess, setCheckingAccess] = useState(true)
-  const [eventGroup, setEventGroup] = useState<any>(null)
+  const [eventGroup, setEventGroup] = useState<XMTPConversation | null>(null)
   const [realTimeMessages, setRealTimeMessages] = useState<ChatMessage[]>([])
   const [isLoadingGroup, setIsLoadingGroup] = useState(false)
   const [attendeeCount, setAttendeeCount] = useState(0)
@@ -102,13 +102,11 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
         let group = groups.find(g => g.id === currentEvent.xmtpGroupId)
         if (group) {
           setEventGroup(group)
-          console.log('Found event group:', group.id)
-          // Get group member count
           try {
             const memberList = await group.members()
             setAttendeeCount(memberList.length)
           } catch (error) {
-            console.log('Could not get member count')
+            // Could not get member count
           }
         } else {
           // If not found and user is organizer, create the group
@@ -120,23 +118,16 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
               const newGroup = await createGroup(groupName, groupDescription)
               if (newGroup) {
                 setEventGroup(newGroup)
-                console.log('Created new event group:', newGroup.id)
-                // Optionally: update event.xmtpGroupId in your backend here
-                // Optionally: show a toast or notification
                 try {
                   const memberList = await newGroup.members()
                   setAttendeeCount(memberList.length)
                 } catch (error) {
-                  console.log('Could not get member count after creation')
+                  // Could not get member count after creation
                 }
-              } else {
-                console.warn('Failed to create event group as organizer')
               }
             } catch (error) {
               console.error('Error creating event group as organizer:', error)
             }
-          } else {
-            console.log('Event group not found, user may need to be added')
           }
         }
       } catch (error) {
@@ -150,12 +141,16 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   }, [isXmtpConnected, hasAccess, currentEvent?.xmtpGroupId, getUserGroups])
 
   // Stream messages from the event group
+  const streamCleanupRef = useRef<(() => void) | null>(null)
+
   useEffect(() => {
     if (!eventGroup || !isXmtpConnected) return
 
+    let cancelled = false
+
     const setupMessageStream = async () => {
       try {
-        const cleanup = await streamAllMessages((message: any) => {
+        const cleanup = await streamAllMessages((message) => {
           // Only show messages from the event group
           if (message.conversation?.id === eventGroup.id) {
             const newMessage: ChatMessage = {
@@ -165,7 +160,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
               timestamp: new Date(message.sent),
               isAnnouncement: false // Could add logic to detect announcements
             }
-            
+
             setRealTimeMessages(prev => {
               // Avoid duplicates
               if (prev.find(m => m.id === newMessage.id)) return prev
@@ -174,15 +169,22 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
           }
         })
 
-        return cleanup
+        if (cancelled) {
+          cleanup?.()
+        } else {
+          streamCleanupRef.current = cleanup ?? null
+        }
       } catch (error) {
         console.error('Error setting up message stream:', error)
       }
     }
 
-    const cleanup = setupMessageStream()
+    setupMessageStream()
+
     return () => {
-      cleanup?.then(fn => fn?.())
+      cancelled = true
+      streamCleanupRef.current?.()
+      streamCleanupRef.current = null
     }
   }, [eventGroup, isXmtpConnected, streamAllMessages])
 
@@ -281,7 +283,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
                 <div className="text-xs">You need to RSVP or purchase a ticket to access the chat.</div>
                 <div className="mt-2">
                   <Button asChild>
-                    <a href={currentEvent?.url} target="_blank" rel="noopener noreferrer">
+                    <a href={`/events/${eventId}`}>
                       View Event
                     </a>
                   </Button>
