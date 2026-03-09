@@ -26,7 +26,7 @@ interface PaymentModalProps {
   organizer: string // Add organizer prop
 }
 
-const CONTRACT_ADDRESS = "0x568B91fA6de99ef3C6287C60C18a0F964718a9Ad" // Replace with your contract address
+const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const // Base Sepolia USDC
 
 export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eventTitle, organizer }: PaymentModalProps) {
   const { address, walletClient } = useWallet()
@@ -34,7 +34,7 @@ export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eve
   const [txHash, setTxHash] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null)
-  const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" // Base Sepolia USDC
+  const contract = getEventContract()
 
   // Check USDC balance and approval on open
   useEffect(() => {
@@ -51,17 +51,12 @@ export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eve
         setUsdcBalance(balance)
         
         // Check USDC allowance for the contract using public client
-        const allowance = await publicClient.readContract({
+        await publicClient.readContract({
           address: USDC_ADDRESS,
           abi: erc20Abi,
           functionName: "allowance",
-          args: [address as `0x${string}`, CONTRACT_ADDRESS as `0x${string}`],
+          args: [address as `0x${string}`, contract.address],
         })
-        
-        // Check if allowance is sufficient for the ticket price
-        const ticketPriceUsdc = BigInt(Math.floor(Number(amount) * 1_000_000)) // Convert to USDC 6 decimals
-        console.log("USDC allowance:", allowance.toString(), "Required:", ticketPriceUsdc.toString())
-        
       } catch (err) {
         console.error("Failed to check USDC balance/allowance:", err)
         setErrorMessage("Failed to check USDC balance.")
@@ -86,21 +81,15 @@ export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eve
       const ticketPriceUsdc = BigInt(Math.floor(Number(amount) * 1_000_000)) // Convert to USDC 6 decimals
       
       // Step 1: Check and approve USDC if needed
-      console.log("Checking USDC allowance for contract:", CONTRACT_ADDRESS)
-      
       const currentAllowance = await publicClient.readContract({
         address: USDC_ADDRESS,
         abi: erc20Abi,
         functionName: "allowance",
-        args: [address as `0x${string}`, CONTRACT_ADDRESS as `0x${string}`],
+        args: [address as `0x${string}`, contract.address],
       })
-      
-      console.log("Current USDC allowance:", currentAllowance.toString())
-      console.log("Required amount:", ticketPriceUsdc.toString())
       
       // If allowance is insufficient, approve first
       if (currentAllowance < ticketPriceUsdc) {
-        console.log("Insufficient allowance, requesting USDC approval...")
         
         // Show user that we're requesting approval first
         setErrorMessage("Please approve USDC spending in your wallet...")
@@ -109,76 +98,67 @@ export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eve
           address: USDC_ADDRESS,
           abi: erc20Abi,
           functionName: "approve",
-          args: [CONTRACT_ADDRESS, ticketPriceUsdc],
+          args: [contract.address, ticketPriceUsdc],
           chain: baseSepolia,
+          account: address as `0x${string}`,
         })
         
-        console.log("USDC approval transaction sent:", approveTxHash)
         setErrorMessage("USDC approval pending confirmation...")
         
         // Wait for approval confirmation
-        if (walletClient.waitForTransactionReceipt) {
-          const approvalReceipt = await walletClient.waitForTransactionReceipt({ hash: approveTxHash })
+        {
+          const approvalReceipt = await publicClient.waitForTransactionReceipt({ hash: approveTxHash })
           if (approvalReceipt.status !== "success") {
             throw new Error("USDC approval transaction failed")
           }
-          console.log("USDC approval confirmed")
           setErrorMessage(null)
         }
-      } else {
-        console.log("Sufficient USDC allowance already exists")
       }
       
       // Step 2: Call rsvpOrPurchase - this will transfer USDC to organizer
-      console.log("Calling rsvpOrPurchase - this will transfer", amount, "USDC to organizer:", organizer)
-      
-      const contract = getEventContract(walletClient)
+      const writeContract = getEventContract(walletClient)
       const eventIdBigInt = typeof eventId === "bigint" ? eventId : BigInt(eventId)
       
       const txHash = await walletClient.writeContract({
-        address: contract.address,
-        abi: contract.abi,
+        address: writeContract.address,
+        abi: writeContract.abi,
         functionName: "rsvpOrPurchase",
         args: [eventIdBigInt],
         chain: baseSepolia,
+        account: address as `0x${string}`,
       })
       
-      console.log("Purchase transaction sent:", txHash)
-      console.log("USDC will be transferred from", address, "to", organizer)
       setTxHash(txHash)
       
       // Wait for confirmation
-      if (walletClient.waitForTransactionReceipt) {
+      {
         try {
-          const receipt = await walletClient.waitForTransactionReceipt({ hash: txHash })
-          if (receipt.status === "success" || receipt.status === 1) {
+          const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+          if (receipt.status === "success") {
             setStatus("success")
-            console.log("✅ Purchase successful! USDC transferred to organizer.")
           } else {
             setStatus("error")
             setErrorMessage("Transaction failed or reverted. Please check your USDC balance and try again.")
           }
-        } catch (waitErr: any) {
+        } catch (waitErr: unknown) {
           setStatus("error")
-          setErrorMessage(waitErr?.message || "Transaction failed to confirm.")
+          setErrorMessage(waitErr instanceof Error ? waitErr.message : "Transaction failed to confirm.")
           console.error("Transaction failed:", waitErr)
         }
-      } else {
-        // If we can't wait for receipt, assume success if we got a hash
-        setStatus("success")
       }
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStatus("error")
       setTxHash(null)
-      if (err?.message?.includes("insufficient allowance")) {
+      const message = err instanceof Error ? err.message : ""
+      if (message.includes("insufficient allowance")) {
         setErrorMessage("USDC approval required. Please try again.")
-      } else if (err?.message?.includes("insufficient balance")) {
+      } else if (message.includes("insufficient balance")) {
         setErrorMessage("Insufficient USDC balance to purchase ticket.")
-      } else if (err?.message?.includes("User rejected")) {
+      } else if (message.includes("User rejected")) {
         setErrorMessage("Transaction cancelled by user.")
       } else {
-        setErrorMessage(err?.message || "Payment transaction failed. Please try again.")
+        setErrorMessage(message || "Payment transaction failed. Please try again.")
       }
       console.error("Payment failed:", err)
     }
