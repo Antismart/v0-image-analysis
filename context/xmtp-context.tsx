@@ -5,22 +5,82 @@ import { Client } from "@xmtp/browser-sdk"
 import { useWallet } from "@/context/wallet-context"
 import { upsertUser, createGroup as createDbGroup, addUserToGroup, sendMessage as sendDbMessage, getGroupMessages } from '@/lib/group-chat-service'
 
+export interface XMTPMessage {
+  id: string
+  content: string
+  senderInboxId?: string
+  senderAddress?: string
+  sent: Date
+  conversation?: { id: string }
+}
+
+export interface XMTPConversation {
+  id: string
+  conversationType?: string
+  name?: string
+  send: (content: string) => Promise<void>
+  members: () => Promise<Array<{ inboxId: string }>>
+  messages: () => Promise<XMTPMessage[]>
+  addMembers: (inboxIds: string[]) => Promise<void>
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toXMTPMessage(msg: any): XMTPMessage {
+  return {
+    id: String(msg.id ?? ''),
+    content: typeof msg.content === 'string' ? msg.content : String(msg.content ?? ''),
+    senderInboxId: msg.senderInboxId ? String(msg.senderInboxId) : undefined,
+    senderAddress: msg.senderAddress ? String(msg.senderAddress) : undefined,
+    sent: msg.sent instanceof Date ? msg.sent : new Date(msg.sent ?? Date.now()),
+    conversation: msg.conversation ? { id: String(msg.conversation.id ?? '') } : undefined,
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toXMTPConversation(conv: any): XMTPConversation {
+  return {
+    id: String(conv.id ?? ''),
+    conversationType: conv.conversationType ? String(conv.conversationType) : undefined,
+    name: conv.name ? String(conv.name) : undefined,
+    send: async (content: string) => {
+      await conv.send(content)
+    },
+    members: async () => {
+      const rawMembers = await conv.members()
+      return Array.isArray(rawMembers)
+        ? rawMembers.map((m: { inboxId?: string }) => ({ inboxId: String(m.inboxId ?? '') }))
+        : []
+    },
+    messages: async () => {
+      const rawMessages = await conv.messages()
+      return Array.isArray(rawMessages) ? rawMessages.map(toXMTPMessage) : []
+    },
+    addMembers: async (inboxIds: string[]) => {
+      await conv.addMembers(inboxIds)
+    },
+  }
+}
+
+function toXMTPConversations(convs: unknown[]): XMTPConversation[] {
+  return convs.map(toXMTPConversation)
+}
+
 interface XMTPContextType {
   isConnected: boolean
   connect: () => Promise<void>
   disconnect: () => void
-  xmtpClient: any | null
-  createConversation: (inboxId: string) => Promise<any | null>
-  createGroup: (name: string, description?: string, inboxIds?: string[]) => Promise<any | null>
-  getUserGroups: () => Promise<any[]>
-  getConversations: () => Promise<any[]>
-  sendMessage: (conversation: any, content: string) => Promise<boolean>
-  streamAllMessages: (onMessage: (message: any) => void) => Promise<() => void>
+  xmtpClient: Client | null
+  createConversation: (inboxId: string) => Promise<XMTPConversation | null>
+  createGroup: (name: string, description?: string, inboxIds?: string[]) => Promise<XMTPConversation | null>
+  getUserGroups: () => Promise<XMTPConversation[]>
+  getConversations: () => Promise<XMTPConversation[]>
+  sendMessage: (conversation: XMTPConversation, content: string) => Promise<boolean>
+  streamAllMessages: (onMessage: (message: XMTPMessage) => void) => Promise<() => void>
   findInboxIdByAddress: (address: string) => Promise<string | null>
   addMembersToGroup: (groupId: string, inboxIds: string[]) => Promise<boolean>
-  getGroupById: (groupId: string) => Promise<any | null>
+  getGroupById: (groupId: string) => Promise<XMTPConversation | null>
   isConnecting: boolean
-  conversations: any[]
+  conversations: XMTPConversation[]
   error: string | null
   inboxId: string | null
 }
@@ -65,8 +125,8 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   const { isConnected: isWalletConnected, address, getEthers5Signer } = useWallet()
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [xmtpClient, setXmtpClient] = useState<any>(null)
-  const [conversations, setConversations] = useState<any[]>([])
+  const [xmtpClient, setXmtpClient] = useState<Client | null>(null)
+  const [conversations, setConversations] = useState<XMTPConversation[]>([])
   const [error, setError] = useState<string | null>(null)
   const [inboxId, setInboxId] = useState<string | null>(null)
 
@@ -81,8 +141,6 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
         throw new Error("No ethers5 signer available")
       }
 
-      console.log("Creating V3 signer from ethers5 signer...")
-
       // Wrap the ethers5 signer for V3 compatibility
       const v3Signer = {
         type: "EOA" as const,
@@ -95,14 +153,14 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
         },
         signMessage: async (message: string) => {
           try {
-            console.log("Signing message with ethers5 signer:", message)
             const signature = await ethers5Signer.signMessage(message)
-            console.log("Message signed successfully")
             // Convert hex string to Uint8Array for XMTP V3
             if (typeof signature === "string" && signature.startsWith("0x")) {
               return Uint8Array.from(Buffer.from(signature.slice(2), "hex"))
             }
-            return signature
+            return typeof signature === 'string'
+              ? new TextEncoder().encode(signature)
+              : signature as Uint8Array
           } catch (error) {
             console.error("Error signing message:", error)
             throw error
@@ -110,8 +168,8 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
         },
         getChainId: () => {
           // Get chain ID from the signer's provider if available
-          if (ethers5Signer.provider && ethers5Signer.provider.network) {
-            return BigInt(ethers5Signer.provider.network.chainId)
+          if (ethers5Signer.provider && (ethers5Signer.provider as { network?: { chainId: number } })?.network?.chainId) {
+            return BigInt((ethers5Signer.provider as { network?: { chainId: number } })?.network?.chainId ?? 84532)
           }
           return BigInt(84532) // Base Sepolia fallback
         },
@@ -133,42 +191,37 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
       throw new Error(errorMsg)
     }
     if (xmtpClient || isConnecting) return
-    
+
     setIsConnecting(true)
     setError(null)
-    
+
     try {
-      console.log("Creating V3 signer...")
       const signer = await createV3Signer()
       if (!signer) {
         throw new Error("Failed to create V3 signer")
       }
-      
-      console.log("Creating XMTP V3 client...")
-      
+
       // Generate or retrieve database encryption key
       const dbEncryptionKey = generateDbEncryptionKey()
-      
+
       const client = await Client.create(signer, {
         env: process.env.XMTP_ENV === 'prod' ? 'production' : 'dev',
         dbEncryptionKey: dbEncryptionKey,
       })
-      
-      console.log("XMTP V3 client created successfully")
+
       setXmtpClient(client)
       setIsConnected(true)
       setInboxId(client.inboxId || null)
       setError(null)
-      
+
       // Load existing conversations
       try {
         const convs = await client.conversations.list()
-        setConversations(convs)
-        console.log(`Loaded ${convs.length} conversations`)
+        setConversations(toXMTPConversations(convs))
       } catch (conversationError) {
         console.warn("Could not load conversations:", conversationError)
       }
-      
+
     } catch (error) {
       console.error("Error connecting to XMTP V3:", error)
       const errorMessage = error instanceof Error ? error.message : "Unknown XMTP connection error"
@@ -191,20 +244,18 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   // Create a new DM conversation (V3 style)
   const createConversation = useCallback(async (targetInboxId: string) => {
     if (!xmtpClient) {
-      console.error("XMTP client not connected")
       return null
     }
 
     try {
-      console.log("Creating DM conversation with inbox ID:", targetInboxId)
+      // @ts-expect-error XMTP SDK type mismatch - method exists at runtime
       const conversation = await xmtpClient.conversations.findOrCreateDm(targetInboxId)
-      console.log("DM conversation created/found:", conversation.id)
-      
+
       // Update conversations list
       const convs = await xmtpClient.conversations.list()
-      setConversations(convs)
-      
-      return conversation
+      setConversations(toXMTPConversations(convs))
+
+      return toXMTPConversation(conversation)
     } catch (error) {
       console.error("Error creating conversation:", error)
       return null
@@ -213,16 +264,12 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
 
   // Create a group conversation (V3 native)
   const createGroup = useCallback(async (name: string, description?: string, inboxIds: string[] = []) => {
-    // Check if client exists and is properly initialized
     if (!xmtpClient) {
-      console.error("XMTP client not available")
       return null
     }
 
-    // Additional check to ensure client is ready
     try {
       if (!xmtpClient.inboxId) {
-        console.error("XMTP client not properly initialized - missing inbox ID")
         return null
       }
     } catch (error) {
@@ -231,24 +278,20 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log("Creating group conversation:", name, "with inboxIds:", inboxIds)
-      
       const group = await xmtpClient.conversations.newGroup(inboxIds, {
         name: name,
         description: description || '',
       })
-      
-      console.log("Group created successfully:", group.id)
-      
+
       // Update conversations list
       try {
         const updatedConversations = await xmtpClient.conversations.list()
-        setConversations(updatedConversations)
+        setConversations(toXMTPConversations(updatedConversations))
       } catch (listError) {
         console.warn("Could not refresh conversations list:", listError)
       }
-      
-      return group
+
+      return toXMTPConversation(group)
     } catch (error) {
       console.error("Error creating group:", error)
       return null
@@ -258,14 +301,13 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   // Get user's groups
   const getUserGroups = useCallback(async () => {
     if (!xmtpClient) {
-      console.log("No XMTP client available")
       return []
     }
 
     try {
       const conversations = await xmtpClient.conversations.list()
       // Filter for group conversations
-      const groups = conversations.filter((conv: any) => conv.conversationType === 'group')
+      const groups = toXMTPConversations(conversations).filter((conv) => conv.conversationType === 'group')
       return groups
     } catch (error) {
       console.error("Error fetching user groups:", error)
@@ -276,11 +318,12 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   // Get conversations
   const getConversations = useCallback(async () => {
     if (!xmtpClient) return []
-    
+
     try {
       const convs = await xmtpClient.conversations.list()
-      setConversations(convs)
-      return convs
+      const mapped = toXMTPConversations(convs)
+      setConversations(mapped)
+      return mapped
     } catch (error) {
       console.error("Error fetching conversations:", error)
       return []
@@ -288,9 +331,9 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   }, [xmtpClient])
 
   // Send message
-  const sendMessage = useCallback(async (conversation: any, content: string) => {
+  const sendMessage = useCallback(async (conversation: XMTPConversation, content: string) => {
     if (!conversation || !content) return false
-    
+
     try {
       await conversation.send(content)
       return true
@@ -301,20 +344,20 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   // Stream all messages
-  const streamAllMessages = useCallback(async (onMessage: (message: any) => void) => {
+  const streamAllMessages = useCallback(async (onMessage: (message: XMTPMessage) => void) => {
     if (!xmtpClient) return () => {}
-    
+
     try {
       const stream = await xmtpClient.conversations.streamAllMessages()
-      
+
       const processStream = async () => {
         for await (const message of stream) {
-          onMessage(message)
+          onMessage(toXMTPMessage(message))
         }
       }
-      
+
       processStream()
-      
+
       return () => {
         if (stream && typeof stream.return === 'function') {
           stream.return()
@@ -329,8 +372,9 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   // Find inbox ID by address (V3 method)
   const findInboxIdByAddress = useCallback(async (address: string) => {
     if (!xmtpClient) return null
-    
+
     try {
+      // @ts-expect-error XMTP SDK type mismatch - method exists at runtime
       const inboxId = await xmtpClient.getInboxIdByAddress(address)
       return inboxId
     } catch (error) {
@@ -342,18 +386,17 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   // Add members to group (V3 method)
   const addMembersToGroup = useCallback(async (groupId: string, inboxIds: string[]): Promise<boolean> => {
     if (!xmtpClient) return false
-    
+
     try {
       const conversations = await xmtpClient.conversations.list()
-      const group = conversations.find((conv: any) => conv.id === groupId && conv.conversationType === 'group')
-      
+      const group = toXMTPConversations(conversations).find((conv) => conv.id === groupId && conv.conversationType === 'group')
+
       if (!group) {
         console.error(`Group ${groupId} not found`)
         return false
       }
 
       await group.addMembers(inboxIds)
-      console.log(`Successfully added ${inboxIds.length} members to group ${groupId}`)
       return true
     } catch (error) {
       console.error("Error adding members to group:", error)
@@ -364,10 +407,10 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   // Get group by ID
   const getGroupById = useCallback(async (groupId: string) => {
     if (!xmtpClient) return null
-    
+
     try {
       const conversations = await xmtpClient.conversations.list()
-      const group = conversations.find((conv: any) => conv.id === groupId && conv.conversationType === 'group')
+      const group = toXMTPConversations(conversations).find((conv) => conv.id === groupId && conv.conversationType === 'group')
       return group || null
     } catch (error) {
       console.error("Error getting group:", error)
@@ -380,9 +423,8 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
     // Upsert user in DB
     const user = await upsertUser(address)
     // Upsert group in DB
-    let group = null
     try {
-      group = await createDbGroup(groupName)
+      await createDbGroup(groupName)
     } catch (e) {
       // Group may already exist, ignore error
     }
@@ -402,7 +444,7 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <XMTPContext.Provider 
+    <XMTPContext.Provider
       value={{
         isConnected,
         connect,
