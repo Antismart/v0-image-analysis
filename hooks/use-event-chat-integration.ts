@@ -30,31 +30,28 @@ export function useEventChatIntegration({
   const event = events.find(e => e.id === eventId)
   const groupId = xmtpGroupId || event?.xmtpGroupId
   
-  const { monitorNewAttendees } = useAutoGroupManagement(eventId, xmtpClient, groupId)
+  const { monitorNewAttendees } = useAutoGroupManagement(eventId, xmtpClient ?? undefined, groupId)
 
   // Sync group membership with current attendees
   const syncAttendees = useCallback(async () => {
     if (!isConnected || !xmtpClient || !groupId) {
-      console.log('Cannot sync attendees: missing requirements')
       return
     }
 
     try {
-      console.log(`Syncing attendees for event ${eventId} with group ${groupId}`)
       await syncGroupMembership(eventId, groupId, xmtpClient)
-      console.log('Successfully synced group membership')
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If group not found and user is organizer, create group and retry
+      const errorMessage = error instanceof Error ? error.message : ''
       if (
-        error?.message?.includes('Group') &&
-        error?.message?.includes('not found') &&
+        errorMessage.includes('Group') &&
+        errorMessage.includes('not found') &&
         event &&
         xmtpClient &&
         address &&
         event.organizer?.toLowerCase() === address.toLowerCase()
       ) {
         try {
-          console.log('Group not found, creating new group as organizer...')
           const groupName = `${event.title} - Event Chat`
           const groupDescription = `Discussion group for the event: ${event.title}`
           const newGroup = await xmtpClient.conversations.newGroup([], {
@@ -62,12 +59,7 @@ export function useEventChatIntegration({
             description: groupDescription,
           })
           if (newGroup) {
-            // Optionally: update event.xmtpGroupId in backend here
-            console.log('Created new group:', newGroup.id)
             await syncGroupMembership(eventId, newGroup.id, xmtpClient)
-            console.log('Successfully synced group membership after group creation')
-          } else {
-            console.warn('Failed to create group as organizer')
           }
         } catch (createError) {
           console.error('Error creating group as organizer:', createError)
@@ -107,7 +99,6 @@ export function useEventChatIntegration({
     const setupMonitoring = async () => {
       try {
         cleanup = await monitorNewAttendees()
-        console.log(`Monitoring new attendees for event ${eventId}`)
       } catch (error) {
         console.error('Error setting up attendee monitoring:', error)
       }
@@ -118,7 +109,6 @@ export function useEventChatIntegration({
     return () => {
       if (cleanup) {
         cleanup()
-        console.log(`Stopped monitoring attendees for event ${eventId}`)
       }
     }
   }, [enableMonitoring, isConnected, xmtpClient, eventId, monitorNewAttendees])
