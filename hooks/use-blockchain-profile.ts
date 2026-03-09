@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useWallet } from "@/context/wallet-context"
-import { useOnChainEvents } from "@/hooks/use-onchain-events"
+import { useOnChainEvents, type OnChainEvent } from "@/hooks/use-onchain-events"
 import { getEventContract, publicClient } from "@/lib/contract"
-import { parseAbiItem } from 'viem'
+import { parseAbiItem, type WalletClient } from 'viem'
 
 export interface UserTicket {
   id: string
@@ -17,8 +17,8 @@ export interface UserTicket {
 }
 
 export interface UserProfileData {
-  attendingEvents: any[]
-  organizedEvents: any[]
+  attendingEvents: OnChainEvent[]
+  organizedEvents: OnChainEvent[]
   tickets: UserTicket[]
   loading: boolean
   error: string | null
@@ -107,9 +107,9 @@ export function useBlockchainUserProfile(): UserProfileData {
         }))
 
         setTickets(userTickets)
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching blockchain user data:', err)
-        setError(err.message || "Failed to fetch user profile data from blockchain")
+        setError(err instanceof Error ? err.message : "Failed to fetch user profile data from blockchain")
       } finally {
         setLoading(false)
       }
@@ -137,18 +137,21 @@ export function useBlockchainUserProfile(): UserProfileData {
       const contract = getEventContract()
 
       // Transfer the NFT ticket using safeTransferFrom
+      const { baseSepolia } = await import('@/lib/base-sepolia')
       await walletClient.writeContract({
         address: contract.address,
         abi: contract.abi,
         functionName: 'safeTransferFrom',
         args: [address as `0x${string}`, toAddress as `0x${string}`, BigInt(tokenId)],
+        chain: baseSepolia,
+        account: address as `0x${string}`,
       })
       
       // Refresh tickets after successful transfer
       // The useEffect will automatically refetch the user's tickets
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error transferring ticket:', error)
-      throw new Error(error.message || 'Failed to transfer ticket')
+      throw new Error(error instanceof Error ? error.message : 'Failed to transfer ticket')
     }
   }
 
@@ -163,7 +166,7 @@ export function useBlockchainUserProfile(): UserProfileData {
 }
 
 // Blockchain-based functions for RSVP management
-export async function rsvpToEvent(eventId: string, userAddress: string, walletClient?: any): Promise<void> {
+export async function rsvpToEvent(eventId: string, userAddress: string, walletClient?: WalletClient): Promise<void> {
   try {
     if (!walletClient) {
       throw new Error("Wallet not connected")
@@ -171,15 +174,18 @@ export async function rsvpToEvent(eventId: string, userAddress: string, walletCl
 
     const contract = getEventContract()
 
+    const { baseSepolia } = await import('@/lib/base-sepolia')
     await walletClient.writeContract({
       address: contract.address,
       abi: contract.abi,
       functionName: 'rsvpOrPurchase',
       args: [BigInt(eventId)],
+      chain: baseSepolia,
+      account: userAddress as `0x${string}`,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error RSVPing to event:', error)
-    throw new Error(error.message || 'Failed to RSVP to event')
+    throw new Error(error instanceof Error ? error.message : 'Failed to RSVP to event')
   }
 }
 
@@ -195,13 +201,13 @@ export async function checkUserRSVP(eventId: string, userAddress: string): Promi
     }) as boolean
 
     return hasRSVP
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error checking RSVP status:', error)
     return false
   }
 }
 
-export async function markEventAttendance(eventId: string, attendeeAddress: string, walletClient?: any): Promise<void> {
+export async function markEventAttendance(eventId: string, attendeeAddress: string, walletClient?: { writeContract: (args: Record<string, unknown>) => Promise<string> }): Promise<void> {
   try {
     if (!walletClient) {
       throw new Error("Wallet not connected")
@@ -215,9 +221,9 @@ export async function markEventAttendance(eventId: string, attendeeAddress: stri
       functionName: 'markAttendance',
       args: [BigInt(eventId), attendeeAddress as `0x${string}`],
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error marking attendance:', error)
-    throw new Error(error.message || 'Failed to mark attendance')
+    throw new Error(error instanceof Error ? error.message : 'Failed to mark attendance')
   }
 }
 
