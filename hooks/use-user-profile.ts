@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useWallet } from "@/context/wallet-context"
-import { useOnChainEvents } from "@/hooks/use-onchain-events"
+import { useOnChainEvents, type OnChainEvent } from "@/hooks/use-onchain-events"
 import { getEventContract, publicClient } from "@/lib/contract"
 
 export interface UserTicket {
@@ -14,8 +14,8 @@ export interface UserTicket {
 }
 
 export interface UserProfileData {
-  attendingEvents: any[]
-  organizedEvents: any[]
+  attendingEvents: OnChainEvent[]
+  organizedEvents: OnChainEvent[]
   tickets: UserTicket[]
   loading: boolean
   error: string | null
@@ -65,8 +65,8 @@ export function useUserProfile(): UserProfileData {
           }))
 
         setTickets(userTickets)
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch user profile data")
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to fetch user profile data")
       } finally {
         setLoading(false)
       }
