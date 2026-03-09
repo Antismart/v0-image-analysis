@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Filter } from "lucide-react"
 import { EmptyStateIllustration } from "@/components/illustrations"
 import { MobileFilters } from "@/components/mobile-filters"
-import { useOnChainEvents } from "@/hooks/use-onchain-events"
+import { useOnChainEvents, type OnChainEvent } from "@/hooks/use-onchain-events"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function EventDiscovery() {
@@ -61,7 +61,7 @@ export default function EventDiscovery() {
     const cancelled = filtered.filter(event => event.cancelled)
 
     // Sort each category: newest first (by creation order - lower ID = newer)
-    const sortByNewest = (a: any, b: any) => parseInt(b.id) - parseInt(a.id)
+    const sortByNewest = (a: OnChainEvent, b: OnChainEvent) => parseInt(b.id) - parseInt(a.id)
     
     return {
       upcoming: upcoming.sort(sortByNewest),
