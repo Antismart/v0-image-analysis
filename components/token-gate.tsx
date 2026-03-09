@@ -14,7 +14,7 @@ interface TokenGateProps {
 }
 
 export function TokenGate({ eventId, children }: TokenGateProps) {
-  const { address, isConnected, connect } = useWallet()
+  const { address, isConnected, connect, connectors } = useWallet()
   const [hasAccess, setHasAccess] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
 
@@ -55,7 +55,7 @@ export function TokenGate({ eventId, children }: TokenGateProps) {
         <p className="mb-4 max-w-md text-center text-muted-foreground">
           You need to connect your wallet to view this event.
         </p>
-        <Button onClick={connect}>Connect Wallet</Button>
+        <Button onClick={() => connect(connectors[0])}>Connect Wallet</Button>
       </div>
     )
   }
