@@ -317,23 +317,6 @@ const config = {
               paddingBottom: "0.8571429em",
               paddingLeft: "1.1428571em",
             },
-            "pre code": {
-              backgroundColor: "transparent",
-              borderWidth: "0",
-              borderRadius: "0",
-              padding: "0",
-              fontWeight: "inherit",
-              color: "inherit",
-              fontSize: "inherit",
-              fontFamily: "inherit",
-              lineHeight: "inherit",
-            },
-            "pre code::before": {
-              content: "none",
-            },
-            "pre code::after": {
-              content: "none",
-            },
             table: {
               width: "100%",
               tableLayout: "auto",
