@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useRef, useCallback } from "react"
-import { useXMTP } from "@/context/xmtp-context"
+import { useXMTP, type XMTPConversation, type XMTPMessage } from "@/context/xmtp-context"
 import { useWallet } from "@/context/wallet-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,12 +33,13 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
   xmtpGroupId, 
   isOrganizer = false 
 }) => {
-  const { 
-    xmtpClient, 
-    isConnected, 
-    connect, 
-    createConversation, 
-    getConversations, 
+  const {
+    xmtpClient,
+    isConnected,
+    connect,
+    createConversation,
+    createGroup,
+    getConversations,
     sendMessage,
     streamAllMessages,
     isConnecting,
@@ -50,7 +51,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
   const { toast } = useToast()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
-  const [eventConversation, setEventConversation] = useState<any>(null)
+  const [eventConversation, setEventConversation] = useState<XMTPConversation | null>(null)
   const [memberCount, setMemberCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
@@ -72,20 +73,22 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
 
     setIsLoading(true)
     try {
-      // For simplicity, we'll use a hardcoded "event organizer" address for demonstration
-      // In a real app, you'd get this from your event data
-      const eventOrganizerAddress = "0x1234567890123456789012345678901234567890" // Demo address
-      
-      // Check if we already have a conversation with the event organizer
+      // Use the xmtpGroupId to find the event's group conversation
       const allConversations = await getConversations()
-      let conversation = allConversations.find(conv => 
-        conv.peerAddress.toLowerCase() === eventOrganizerAddress.toLowerCase()
-      )
+      let conversation = xmtpGroupId
+        ? allConversations.find(conv => conv.id === xmtpGroupId)
+        : null
 
-      // If no conversation exists and we're the organizer, create one with ourselves
+      // If no conversation exists and we're the organizer, create a group
       if (!conversation && isOrganizer) {
-        // For demo purposes, create a conversation (this would normally be with participants)
-        conversation = await createConversation(eventOrganizerAddress)
+        const group = await createGroup(
+          `${eventTitle} - Event Chat`,
+          `Discussion group for: ${eventTitle}`
+        )
+        if (group) {
+          const refreshed = await getConversations()
+          conversation = refreshed.find(conv => conv.id === group.id) ?? null
+        }
       }
 
       if (conversation) {
@@ -94,7 +97,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
         // Load existing messages from this conversation
         try {
           const existingMessages = await conversation.messages()
-          const formattedMessages: Message[] = existingMessages.map((msg: any) => ({
+          const formattedMessages: Message[] = existingMessages.map((msg: XMTPMessage) => ({
             id: msg.id || `msg-${msg.sent.getTime()}`,
             sender: msg.senderAddress || msg.senderInboxId || "unknown",
             senderInboxId: msg.senderInboxId,
@@ -114,9 +117,9 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
         }
 
         try {
-          const cleanup = await streamAllMessages((message: any) => {
+          const cleanup = await streamAllMessages((message) => {
             // Only add messages from our event conversation
-            if (message.conversation?.topic === conversation.topic) {
+            if (message.conversation?.id === conversation.id) {
               const newMessage: Message = {
                 id: message.id || `msg-${message.sent.getTime()}`,
                 sender: message.senderAddress || message.senderInboxId || "unknown",
@@ -147,7 +150,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
           description: "Event chat is ready for real-time messaging!",
         })
         
-        console.log("Real XMTP chat initialized for event:", eventTitle)
+        // XMTP chat initialized for event
       } else {
         toast({
           title: "Chat Not Available",
@@ -165,7 +168,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
     } finally {
       setIsLoading(false)
     }
-  }, [xmtpClient, isConnected, address, eventTitle, isOrganizer, getConversations, createConversation, streamAllMessages, toast])
+  }, [xmtpClient, isConnected, address, eventTitle, isOrganizer, getConversations, createGroup, streamAllMessages, toast])
 
   // Initialize chat when XMTP is connected
   useEffect(() => {
@@ -196,7 +199,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({
       
       if (success) {
         setInput("")
-        console.log("Real XMTP message sent:", input)
+        // Message sent successfully
       } else {
         throw new Error("Failed to send message")
       }
