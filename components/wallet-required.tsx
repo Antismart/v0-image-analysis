@@ -11,7 +11,7 @@ interface WalletRequiredProps {
 }
 
 export function WalletRequired({ children }: WalletRequiredProps) {
-  const { isConnected, connect, address } = useWallet()
+  const { isConnected, connect, connectors, address } = useWallet()
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function WalletRequired({ children }: WalletRequiredProps) {
         <WalletConnectIllustration className="mb-6 max-w-[200px]" />
         <h3 className="mb-2 text-xl font-semibold">Wallet Connection Required</h3>
         <p className="mb-4 text-muted-foreground">Please connect your wallet to access this feature.</p>
-        <Button onClick={connect}>Connect Wallet</Button>
+        <Button onClick={() => connect(connectors[0])}>Connect Wallet</Button>
       </div>
     )
   }
