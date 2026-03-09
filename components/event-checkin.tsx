@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useWallet } from "@/context/wallet-context"
 import { getEventContract, publicClient } from "@/lib/contract"
+import { baseSepolia } from "@/lib/base-sepolia"
 import { QrCode, CheckCircle, UserCheck, Users, Camera } from "lucide-react"
 import { QrReader } from 'react-qr-reader'
 
@@ -76,11 +77,13 @@ export function EventCheckin({ eventId, isOrganizer }: EventCheckinProps) {
     }
   }
 
-  const handleQrScan = async (result: any) => {
+  const handleQrScan = async (result: unknown) => {
     if (!result) return
 
     try {
-      const data = JSON.parse(result.text)
+      const text = String((result as { getText?: () => string }).getText?.() ?? (result as { text?: string }).text ?? '')
+      if (!text) return
+      const data = JSON.parse(text)
       if (data.eventId === eventId && data.tokenId && data.owner) {
         await checkInAttendee(data.owner, data.tokenId)
         setIsQrScannerOpen(false)
@@ -111,8 +114,9 @@ export function EventCheckin({ eventId, isOrganizer }: EventCheckinProps) {
         address: contract.address,
         abi: contract.abi,
         functionName: 'markAttendance',
-        args: [BigInt(eventId), attendeeAddress, BigInt(tokenId)],
-        chain: contract.client.chain,
+        args: [BigInt(eventId), attendeeAddress as `0x${string}`, BigInt(tokenId)],
+        chain: baseSepolia,
+        account: address as `0x${string}`,
       })
 
       // Update local state
