@@ -17,8 +17,8 @@ export interface OnChainEvent {
   ticketPrice: number
   xmtpGroupId?: string
   cancelled?: boolean
-  schedule?: any[]
-  speakers?: any[]
+  schedule?: Array<{ title: string; time: string; description: string }>
+  speakers?: Array<{ name: string; title: string; bio: string; avatar?: string }>
 }
 
 export function useOnChainEvents() {
@@ -100,8 +100,8 @@ export function useOnChainEvents() {
           allEvents = allEvents.concat(results);
         }
         if (!cancelled) setEvents(allEvents)
-      } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to fetch events")
+      } catch (err: unknown) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to fetch events")
       } finally {
         if (!cancelled) setLoading(false)
       }
