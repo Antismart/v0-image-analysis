@@ -208,7 +208,7 @@ export function EventDetails({ id }: EventDetailsProps) {
         {event.speakers && event.speakers.length > 0 && (
           <TabsContent value="speakers" className="mt-4">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {event.speakers.map((speaker: any, idx: number) => (
+              {event.speakers.map((speaker, idx) => (
                 <div key={idx} className="flex flex-col items-center rounded-lg border p-4">
                   {speaker.avatar ? (
                     <img src={speaker.avatar} alt={speaker.name} className="w-16 h-16 rounded-full object-cover mb-2 border" />
@@ -226,7 +226,7 @@ export function EventDetails({ id }: EventDetailsProps) {
         {event.schedule && event.schedule.length > 0 && (
           <TabsContent value="schedule" className="mt-4">
             <div className="space-y-4">
-              {event.schedule.map((item: any, idx: number) => (
+              {event.schedule.map((item, idx) => (
                 <div key={idx} className="rounded-lg border p-4">
                   <div className="font-semibold">{item.title}</div>
                   <div className="text-sm text-muted-foreground mb-1">{item.time}</div>
