@@ -33,7 +33,7 @@ export function XmtpV3Test() {
     inboxIdLookup: null,
   })
 
-  const [testGroup, setTestGroup] = useState<any>(null)
+  const [testGroup, setTestGroup] = useState<{ id: string; name?: string } | null>(null)
   const [testAddress, setTestAddress] = useState("")
   const [foundInboxId, setFoundInboxId] = useState<string | null>(null)
 
@@ -49,11 +49,9 @@ export function XmtpV3Test() {
 
   const runXmtpConnection = async () => {
     try {
-      console.log("Testing XMTP V3 connection...")
       await connectXmtp()
-      console.log("XMTP V3 connection successful!")
     } catch (error) {
-      console.error("XMTP V3 connection failed:", error)
+      // Connection failed
     }
   }
 
@@ -61,7 +59,6 @@ export function XmtpV3Test() {
     if (!isXmtpConnected) return
 
     try {
-      console.log("Testing V3 group creation...")
       const group = await createGroup(
         `Test Group ${Date.now()}`,
         "Test group for V3 validation",
@@ -71,14 +68,11 @@ export function XmtpV3Test() {
       if (group) {
         setTestGroup(group)
         setTestResults(prev => ({ ...prev, groupCreation: true }))
-        console.log("Group creation successful:", group.id)
       } else {
         setTestResults(prev => ({ ...prev, groupCreation: false }))
-        console.error("Group creation returned null")
       }
     } catch (error) {
       setTestResults(prev => ({ ...prev, groupCreation: false }))
-      console.error("Group creation failed:", error)
     }
   }
 
@@ -86,20 +80,16 @@ export function XmtpV3Test() {
     if (!isXmtpConnected || !testAddress) return
 
     try {
-      console.log("Testing inbox ID lookup for address:", testAddress)
       const inboxId = await findInboxIdByAddress(testAddress)
       
       if (inboxId) {
         setFoundInboxId(inboxId)
         setTestResults(prev => ({ ...prev, inboxIdLookup: true }))
-        console.log("Inbox ID lookup successful:", inboxId)
       } else {
         setTestResults(prev => ({ ...prev, inboxIdLookup: false }))
-        console.log("Inbox ID lookup returned null - address may not be on XMTP")
       }
     } catch (error) {
       setTestResults(prev => ({ ...prev, inboxIdLookup: false }))
-      console.error("Inbox ID lookup failed:", error)
     }
   }
 
@@ -133,14 +123,14 @@ export function XmtpV3Test() {
             <div className="flex items-center gap-2">
               {getStatusIcon(testResults.walletConnection)}
               <span className="text-sm">Wallet Connected</span>
-              <Badge variant={getStatusColor(testResults.walletConnection) as any}>
+              <Badge variant={getStatusColor(testResults.walletConnection) as "secondary" | "destructive" | "default" | "outline"}>
                 {testResults.walletConnection ? "Connected" : "Disconnected"}
               </Badge>
             </div>
             <div className="flex items-center gap-2">
               {getStatusIcon(testResults.xmtpConnection)}
               <span className="text-sm">XMTP V3 Connected</span>
-              <Badge variant={getStatusColor(testResults.xmtpConnection) as any}>
+              <Badge variant={getStatusColor(testResults.xmtpConnection) as "secondary" | "destructive" | "default" | "outline"}>
                 {testResults.xmtpConnection ? "Connected" : "Disconnected"}
               </Badge>
             </div>
@@ -247,7 +237,7 @@ export function XmtpV3Test() {
                 </span>
                 <div className="flex items-center gap-2">
                   {getStatusIcon(result)}
-                  <Badge variant={getStatusColor(result) as any}>
+                  <Badge variant={getStatusColor(result) as "secondary" | "destructive" | "default" | "outline"}>
                     {result === null ? "Pending" : result ? "Pass" : "Fail"}
                   </Badge>
                 </div>
