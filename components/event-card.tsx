@@ -38,6 +38,15 @@ export function EventCard({ event }: EventCardProps) {
   const imgRef = useRef<HTMLImageElement>(null)
   const [bgColor, setBgColor] = useState<string>("#f3f4f6") // fallback neutral
 
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   useEffect(() => {
     if (!imgRef.current) return
     const img = imgRef.current
@@ -48,6 +57,7 @@ export function EventCard({ event }: EventCardProps) {
     if (!ctx) return
     img.crossOrigin = "anonymous"
     img.onload = () => {
+      if (!isMountedRef.current) return
       ctx.drawImage(img, 0, 0, 1, 1)
       const data = ctx.getImageData(0, 0, 1, 1).data
       setBgColor(`rgb(${data[0]},${data[1]},${data[2]})`)
