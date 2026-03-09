@@ -78,6 +78,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   return (
     <style
+      // Safe: __html is built from developer-controlled ChartConfig values only, not user input
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(
