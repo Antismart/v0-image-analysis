@@ -28,7 +28,7 @@ export function formatTokenBalance(
   }
 
   // If balance is 0, return "0"
-  if (balanceBigInt === 0n) {
+  if (balanceBigInt === BigInt(0)) {
     return symbol ? `0 ${symbol}` : '0'
   }
 
@@ -117,7 +117,7 @@ export function isDustBalance(
   decimals: number,
   dustThreshold: number = 0.000001
 ): boolean {
-  if (balance === 0n) return false
+  if (balance === BigInt(0)) return false
   
   const formatted = formatUnits(balance, decimals)
   const numericValue = parseFloat(formatted)
