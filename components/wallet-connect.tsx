@@ -93,7 +93,7 @@ export function WalletConnect() {
           <div className="absolute z-50 mt-2 w-64 sm:w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg dark:bg-gray-800 dark:border-gray-700 right-0 sm:right-auto">
             <div className="px-2 py-2 text-sm font-semibold">Select Wallet</div>
             <div className="my-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-            {connectors.map((connector: any) => (
+            {connectors.map((connector) => (
               <button
                 key={connector.id}
                 className="w-full text-left px-3 py-3 sm:py-2 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 touch-target"
