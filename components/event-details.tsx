@@ -152,7 +152,7 @@ export function EventDetails({ id }: EventDetailsProps) {
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center gap-2 rounded-lg border p-3">
           <CalendarIcon className="h-5 w-5 text-pamoja-500 flex-shrink-0" />
           <div className="min-w-0 flex-1">
@@ -207,7 +207,7 @@ export function EventDetails({ id }: EventDetailsProps) {
         </TabsContent>
         {event.speakers && event.speakers.length > 0 && (
           <TabsContent value="speakers" className="mt-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {event.speakers.map((speaker, idx) => (
                 <div key={idx} className="flex flex-col items-center rounded-lg border p-4">
                   {speaker.avatar ? (
