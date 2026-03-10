@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Outfit, Montserrat } from "next/font/google"
+import { Inter, Space_Grotesk } from "next/font/google"
 import { WalletProvider } from "@/context/wallet-context"
 import { XMTPProvider } from "@/context/xmtp-context"
 import { UserProvider } from "@/context/user-context"
@@ -12,14 +12,6 @@ import { Web3Provider } from "@/components/web3-provider"
 import ClientRoot from "@/components/client-root"
 import "./globals.css"
 
-// Enhanced font configuration with more weights
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
-})
-
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -27,12 +19,11 @@ const inter = Inter({
   weight: ["300", "400", "500", "600", "700"],
 })
 
-// Add a new display font for special elements
-const montserrat = Montserrat({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-montserrat",
+  variable: "--font-space-grotesk",
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 })
 
 export const metadata: Metadata = {
@@ -55,7 +46,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${inter.variable} ${montserrat.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`} suppressHydrationWarning>
         <ClientRoot>{children}</ClientRoot>
       </body>
     </html>

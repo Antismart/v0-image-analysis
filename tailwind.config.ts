@@ -21,8 +21,8 @@ const config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        heading: ["var(--font-outfit)", "system-ui", "sans-serif"],
-        display: ["var(--font-montserrat)", "system-ui", "sans-serif"],
+        heading: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
+        display: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
         mono: [
           "ui-monospace",
           "SFMono-Regular",
@@ -231,7 +231,7 @@ const config = {
             h1: {
               color: "var(--tw-prose-headings)",
               fontWeight: "700",
-              fontFamily: "var(--font-outfit)",
+              fontFamily: "var(--font-space-grotesk)",
             },
             "h1 strong": {
               fontWeight: "800",
@@ -240,7 +240,7 @@ const config = {
             h2: {
               color: "var(--tw-prose-headings)",
               fontWeight: "700",
-              fontFamily: "var(--font-outfit)",
+              fontFamily: "var(--font-space-grotesk)",
             },
             "h2 strong": {
               fontWeight: "800",
@@ -249,7 +249,7 @@ const config = {
             h3: {
               color: "var(--tw-prose-headings)",
               fontWeight: "700",
-              fontFamily: "var(--font-outfit)",
+              fontFamily: "var(--font-space-grotesk)",
             },
             "h3 strong": {
               fontWeight: "800",
@@ -258,7 +258,7 @@ const config = {
             h4: {
               color: "var(--tw-prose-headings)",
               fontWeight: "700",
-              fontFamily: "var(--font-outfit)",
+              fontFamily: "var(--font-space-grotesk)",
             },
             "h4 strong": {
               fontWeight: "800",

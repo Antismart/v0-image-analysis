@@ -165,7 +165,7 @@
 /* Enhanced component styles */
 @layer components {
   .hero-heading {
-    @apply font-montserrat font-extrabold tracking-tighter text-4xl md:text-5xl lg:text-6xl;
+    @apply font-display font-extrabold tracking-tighter text-4xl md:text-5xl lg:text-6xl;
     letter-spacing: -0.03em;
     line-height: 1.1;
   }
@@ -245,7 +245,7 @@
 
   /* Display text for special elements */
   .display-text {
-    @apply font-montserrat font-bold tracking-tighter;
+    @apply font-display font-bold tracking-tighter;
     letter-spacing: -0.03em;
   }
 
@@ -290,7 +290,7 @@
   /* Enhanced blockquote styling */
   blockquote {
     @apply pl-4 border-l-4 border-pamoja-300 dark:border-pamoja-700 italic text-muted-foreground;
-    font-family: var(--font-outfit);
+    font-family: var(--font-space-grotesk);
   }
 
   /* Enhanced code styling */
@@ -584,12 +584,12 @@
   }
 
   .font-heading {
-    font-family: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       "Helvetica Neue", Arial, sans-serif;
   }
 
   .font-display {
-    font-family: var(--font-montserrat), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       "Helvetica Neue", Arial, sans-serif;
   }
 
