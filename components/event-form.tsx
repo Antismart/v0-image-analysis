@@ -527,7 +527,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
           <h3 className="font-semibold text-lg">Event Schedule</h3>
           <div className="space-y-3">
             {schedule.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start border p-3 rounded-md">
+              <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-start border p-3 rounded-md">
                 <div className="md:col-span-1">
                   <Input
                     placeholder="Session Title"
@@ -573,7 +573,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
           <h3 className="font-semibold text-lg">Speakers</h3>
           <div className="space-y-4">
             {speakers.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start border p-4 rounded-md">
+              <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start border p-4 rounded-md">
                 <div className="flex flex-col items-center gap-2 lg:items-start">
                   <div className="flex flex-col items-center gap-2">
                     {item.avatar ? (
