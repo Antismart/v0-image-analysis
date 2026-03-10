@@ -185,7 +185,7 @@ export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eve
           <DialogTitle>Purchase Ticket</DialogTitle>
           <DialogDescription>You're purchasing a ticket for {eventTitle}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
           <div className="rounded-lg border p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Amount</span>
