@@ -144,7 +144,7 @@ export default function EventDiscovery() {
                 <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">Live Events</h3>
                 <div className="h-px bg-gradient-to-r from-green-500/50 to-transparent flex-1"></div>
               </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {organizedEvents.ongoing.map((event) => (
                   <div key={event.id} className="relative bg-white dark:bg-background border-2 border-green-200 dark:border-green-800 rounded-lg shadow-md transition-all duration-300 hover:shadow-lg hover:scale-[1.02] animate-pulse-border">
                     <div className="absolute -top-2 -right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
@@ -167,7 +167,7 @@ export default function EventDiscovery() {
                   {organizedEvents.upcoming.length} event{organizedEvents.upcoming.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {organizedEvents.upcoming.map((event) => (
                   <div key={event.id} className="bg-white dark:bg-background border border-neutral-200 dark:border-border rounded-lg shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02] hover:border-blue-300 dark:hover:border-blue-700">
                     <EventCard event={event} />
@@ -187,7 +187,7 @@ export default function EventDiscovery() {
                   {organizedEvents.ended.length} event{organizedEvents.ended.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {organizedEvents.ended.map((event) => (
                   <div key={event.id} className="bg-white dark:bg-background border border-neutral-200 dark:border-border rounded-lg shadow-sm transition-all duration-300 hover:shadow-md opacity-75 hover:opacity-100 grayscale hover:grayscale-0">
                     <EventCard event={event} />
@@ -207,7 +207,7 @@ export default function EventDiscovery() {
                   {organizedEvents.cancelled.length} event{organizedEvents.cancelled.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {organizedEvents.cancelled.map((event) => (
                   <div key={event.id} className="bg-white dark:bg-background border border-red-200 dark:border-red-800 rounded-lg shadow-sm transition-all duration-300 opacity-50 hover:opacity-75 grayscale">
                     <div className="relative">
