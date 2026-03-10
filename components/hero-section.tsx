@@ -8,7 +8,7 @@ export default function HeroSection() {
   return (
     <section className="py-8 sm:py-12 md:py-16 lg:py-24 px-2 sm:px-4 bg-gradient-to-br from-white to-orange-50 dark:from-background dark:to-background light-surface dark-surface">
       <ResponsiveContainer>
-        <div className="flex flex-col-reverse gap-6 sm:gap-8 md:gap-10 lg:grid lg:gap-12 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_600px] items-center">
+        <div className="flex flex-col-reverse gap-6 sm:gap-8 md:gap-10 lg:grid lg:gap-12 lg:grid-cols-[3fr_2fr] items-center">
           <div className="flex flex-col justify-center items-center lg:items-start space-y-6 sm:space-y-8 w-full">
             <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2 md:mb-4">
               <Logo size="lg" />
