@@ -118,7 +118,7 @@ export function ProfileView() {
               </p>
             </Card>
           ) : (
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {attendingEvents.map((event) => (
                 <Link key={event.id} href={`/event/${event.id}`}>
                   <Card className="overflow-hidden transition-all hover:shadow-md h-full">
@@ -165,7 +165,7 @@ export function ProfileView() {
               </p>
             </Card>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {tickets.map((ticket) => (
                 <NFTTicketCard 
                   key={ticket.id} 
@@ -188,7 +188,7 @@ export function ProfileView() {
               </p>
             </Card>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {organizedEvents.map((event) => (
                 <Link key={event.id} href={`/event/${event.id}`}>
                   <Card className="overflow-hidden transition-all hover:shadow-md">
