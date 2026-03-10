@@ -1,4 +1,5 @@
 import type React from "react"
+import type { Metadata } from "next"
 import { Inter, Outfit, Montserrat } from "next/font/google"
 import { WalletProvider } from "@/context/wallet-context"
 import { XMTPProvider } from "@/context/xmtp-context"
@@ -34,14 +35,17 @@ const montserrat = Montserrat({
   weight: ["400", "500", "600", "700", "800"],
 })
 
-export const metadata = {
-  title: "Pamoja Events",
+export const metadata: Metadata = {
+  title: {
+    default: "Pamoja Events",
+    template: "%s | Pamoja Events",
+  },
   description: "Decentralized event coordination platform on Base",
   icons: {
     icon: [{ url: "/icon.png", sizes: "32x32", type: "image/png" }],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({

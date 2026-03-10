@@ -1,3 +1,10 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Learn how Pamoja Events collects, uses, and protects your information.",
+}
+
 export default function PrivacyPage() {
   return (
     <section className="min-h-[80vh] bg-neutral-50 dark:bg-background transition-colors duration-300">

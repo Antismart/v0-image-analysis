@@ -20,6 +20,7 @@ import { useWallet } from "@/context/wallet-context"
 import { useXMTP } from "@/context/xmtp-context"
 import { getEventContract, publicClient } from "@/lib/contract"
 import { baseSepolia } from "@/lib/base-sepolia"
+import { USDC_ADDRESS } from "@/lib/constants"
 import { parseEther } from "@/lib/parse-ether"
 import type { OnChainEvent } from "@/hooks/use-onchain-events"
 
@@ -174,7 +175,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       // NFT ticketing
       if (isNftTicket) {
         // USDC address for Base Sepolia testnet
-        usdcToken = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+        usdcToken = USDC_ADDRESS;
         // Convert to 6 decimals for USDC
         ticketPriceBigInt = BigInt(Math.floor(Number(ticketPrice || '0') * 1_000_000));
       }
@@ -305,6 +306,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 md:space-y-8 max-w-full">
+      <fieldset disabled={isSubmitting} className="disabled:opacity-60">
       <div className="space-y-3 sm:space-y-4 md:space-y-6">
         <div>
           <Label htmlFor="title" className="form-label">
@@ -601,6 +603,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
                       accept="image/*"
                       onChange={e => e.target.files && handleSpeakerAvatarUpload(e.target.files[0], idx)}
                       className="text-xs max-w-[120px] text-center"
+                      aria-label="Upload speaker avatar"
                     />
                   </div>
                 </div>
@@ -654,6 +657,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
           </Button>
         </div>
       </div>
+      </fieldset>
 
       <LoadingButton
         type="submit"

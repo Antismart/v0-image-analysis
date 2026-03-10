@@ -1,3 +1,10 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Review the terms and conditions for using the Pamoja Events platform.",
+}
+
 export default function TermsPage() {
   return (
     <section className="min-h-[80vh] bg-neutral-50 dark:bg-background transition-colors duration-300">

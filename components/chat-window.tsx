@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Send, Smile, PanelRightOpen, Lock, Users } from "lucide-react"
+import { Send, Smile, PanelRightOpen, Lock, Users, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -17,6 +17,7 @@ import { useOnChainEvents } from "@/hooks/use-onchain-events"
 import { checkUserRSVP } from "@/hooks/use-blockchain-profile"
 import { useEventChatIntegration } from "@/hooks/use-event-chat-integration"
 import { apiUpsertUser, apiCreateGroup, apiAddUserToGroup, apiSendMessage, apiGetGroupMessages } from '@/lib/api-client'
+import { useToast } from "@/hooks/use-toast"
 
 interface ChatMessage {
   id: string
@@ -31,6 +32,7 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ eventId }: ChatWindowProps) {
+  const { toast } = useToast()
   const { address } = useWallet()
   const { events } = useOnChainEvents()
   const { isConnected: isXmtpConnected, connect: connectXmtp, isConnecting, xmtpClient, getUserGroups, sendMessage, streamAllMessages, createGroup, findInboxIdByAddress, inboxId } = useXMTP()
@@ -49,6 +51,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   const [eventGroup, setEventGroup] = useState<XMTPConversation | null>(null)
   const [realTimeMessages, setRealTimeMessages] = useState<ChatMessage[]>([])
   const [isLoadingGroup, setIsLoadingGroup] = useState(false)
+  const [groupError, setGroupError] = useState<string | null>(null)
   const [attendeeCount, setAttendeeCount] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -97,6 +100,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
     const findEventGroup = async () => {
       if (!isXmtpConnected || !hasAccess || !currentEvent?.xmtpGroupId) return
       setIsLoadingGroup(true)
+      setGroupError(null)
       try {
         const groups = await getUserGroups()
         let group = groups.find(g => g.id === currentEvent.xmtpGroupId)
@@ -127,11 +131,13 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
               }
             } catch (error) {
               console.error('Error creating event group as organizer:', error)
+              setGroupError("Unable to connect to group chat. Please try again.")
             }
           }
         }
       } catch (error) {
         console.error('Error finding event group:', error)
+        setGroupError("Unable to connect to group chat. Please try again.")
       } finally {
         setIsLoadingGroup(false)
       }
@@ -224,7 +230,11 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
       setMessage("")
     } catch (error) {
       console.error("Failed to send message:", error)
-      // Could show error toast here
+      toast({
+        title: "Message failed",
+        description: "Your message could not be sent. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -296,6 +306,21 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
         {/* Actual chat UI */}
         {hasAccess && (
           <>
+            {/* Group loading indicator */}
+            {isLoadingGroup && (
+              <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Connecting to chat...
+              </div>
+            )}
+
+            {/* Group error message */}
+            {groupError && !isLoadingGroup && (
+              <div className="flex items-center justify-center py-4 text-sm text-red-500">
+                {groupError}
+              </div>
+            )}
+
             {/* Messages List */}
             <div>
               {realTimeMessages.map(message => (

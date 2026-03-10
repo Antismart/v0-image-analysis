@@ -89,8 +89,8 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('wagmi.wallet');
       sessionStorage.removeItem('wagmi.wallet');
+      window.dispatchEvent(new Event('wallet-disconnect'));
     }
-    window.dispatchEvent(new Event('wallet-disconnect'));
   };
 
   const getEthersSigner = async () => {

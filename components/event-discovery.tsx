@@ -92,9 +92,9 @@ export default function EventDiscovery() {
       className="py-8 sm:py-12 min-h-[80vh] bg-neutral-50 dark:bg-background transition-colors duration-300"
       id="events"
     >
-      <h2 className="section-heading mb-6 sm:mb-8 text-gray-900 dark:text-gray-100">Discover Events</h2>
+      <h2 className="section-heading mb-6 sm:mb-8 text-gray-900 dark:text-gray-100">Explore What's Happening</h2>
       <div className="mb-2 text-sm text-muted-foreground dark:text-gray-400">
-        All ticket prices are shown in <span className="font-semibold">USDC</span> (Base Sepolia Testnet)
+        Tickets priced in <span className="font-semibold">USDC</span> on Base Sepolia — pay with your wallet, no middlemen.
       </div>
       <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
@@ -177,8 +177,8 @@ export default function EventDiscovery() {
       ) : (organizedEvents.upcoming.length === 0 && organizedEvents.ongoing.length === 0 && organizedEvents.ended.length === 0 && organizedEvents.cancelled.length === 0) ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 dark:border-border">
           <EmptyStateIllustration className="mb-6 max-w-[200px]" />
-          <h3 className="mb-2 text-xl font-semibold dark:text-gray-100">No events found</h3>
-          <p className="text-muted-foreground dark:text-gray-400">Try a different search or filter criteria.</p>
+          <h3 className="mb-2 text-xl font-semibold dark:text-gray-100">Nothing here yet</h3>
+          <p className="text-muted-foreground dark:text-gray-400">Try adjusting your search or be the first to create an event.</p>
         </div>
       ) : (
         <div className="space-y-12">

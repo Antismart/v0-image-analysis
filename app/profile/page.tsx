@@ -17,9 +17,9 @@ export default function ProfilePage() {
       <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <div className="mb-8 grid gap-8 md:grid-cols-2 md:items-center">
           <div>
-            <h1 className="mb-4 text-3xl font-bold">Your Profile</h1>
+            <h1 className="mb-4 text-3xl font-bold">Your Onchain Identity</h1>
             <p className="text-muted-foreground">
-              View your events, tickets, and reputation. Connect with other community members.
+              Your events, NFT tickets, and reputation — all tied to your wallet. One identity, fully portable.
             </p>
           </div>
           <div className="flex justify-center">

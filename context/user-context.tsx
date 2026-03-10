@@ -31,36 +31,40 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
     if (isConnected && address) {
-      fetchUserProfile(address)
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        // TODO: Replace mock data with real user profile from blockchain
+        timeoutId = setTimeout(() => {
+          const mockProfile: UserProfile = {
+            reputation: 85,
+            eventsAttended: ["1", "2", "3"],
+            eventsOrganized: ["4"],
+            ownedTickets: ["1", "2"],
+          }
+
+          setProfile(mockProfile)
+          setIsLoading(false)
+        }, 1000)
+      } catch (error) {
+        console.error("Error fetching user profile:", error)
+        setError("Failed to load user profile")
+        setIsLoading(false)
+      }
     } else {
       setProfile(null)
     }
-  }, [address, isConnected])
 
-  const fetchUserProfile = async (address: string) => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // TODO: Replace mock data with real user profile from blockchain
-      setTimeout(() => {
-        const mockProfile: UserProfile = {
-          reputation: 85,
-          eventsAttended: ["1", "2", "3"],
-          eventsOrganized: ["4"],
-          ownedTickets: ["1", "2"],
-        }
-
-        setProfile(mockProfile)
-        setIsLoading(false)
-      }, 1000)
-    } catch (error) {
-      console.error("Error fetching user profile:", error)
-      setError("Failed to load user profile")
-      setIsLoading(false)
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
     }
-  }
+  }, [address, isConnected])
 
   return <UserContext.Provider value={{ profile, isLoading, error }}>{children}</UserContext.Provider>
 }

@@ -1,7 +1,13 @@
+import type { Metadata } from "next"
 import dynamic from "next/dynamic"
 import { WalletRequired } from "@/components/wallet-required"
 import { WalletBalanceDisplay } from "@/components/wallet-balance-display"
 import { EventCreationIllustration } from "@/components/illustrations"
+
+export const metadata: Metadata = {
+  title: "Create Event",
+  description: "Create a new decentralized event with token-gating, NFT tickets, and more on Pamoja Events.",
+}
 
 const EventForm = dynamic(() => import("@/components/event-form").then(mod => ({ default: mod.EventForm })), {
   loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-96" />

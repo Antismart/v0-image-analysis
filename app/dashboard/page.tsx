@@ -17,9 +17,9 @@ export default function DashboardPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
         <div className="mb-6 sm:mb-8 lg:mb-12 grid gap-6 lg:gap-8 lg:grid-cols-2 lg:items-center">
           <div className="text-center lg:text-left">
-            <h1 className="mb-3 sm:mb-4 text-2xl sm:text-3xl lg:text-4xl font-bold light-text-enhanced dark-text-enhanced">Organizer Dashboard</h1>
+            <h1 className="mb-3 sm:mb-4 text-2xl sm:text-3xl lg:text-4xl font-bold light-text-enhanced dark-text-enhanced">Your Command Center</h1>
             <p className="text-muted-foreground light-text-muted dark-text-muted text-sm sm:text-base lg:text-lg">
-              Manage your events, track attendance, and view analytics for your Pamoja Events.
+              Track attendance, manage tickets, and see real-time analytics for every event you organize.
             </p>
           </div>
           <div className="flex justify-center lg:justify-end">

@@ -128,8 +128,11 @@ export function OrganizerDashboard() {
 							))}
 						</div>
 					) : error ? (
-						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed">
-							<span className="text-sm text-muted-foreground">{error}</span>
+						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30">
+							<div className="text-center px-4">
+								<p className="text-sm font-medium text-red-600 dark:text-red-400">Failed to load events</p>
+								<p className="text-xs text-red-500 dark:text-red-500 mt-1">{error}</p>
+							</div>
 						</div>
 					) : filteredEvents.length > 0 ? (
 						<div className="space-y-4">
@@ -223,8 +226,11 @@ export function OrganizerDashboard() {
 							))}
 						</div>
 					) : error ? (
-						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed">
-							<span className="text-sm text-muted-foreground">{error}</span>
+						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30">
+							<div className="text-center px-4">
+								<p className="text-sm font-medium text-red-600 dark:text-red-400">Failed to load events</p>
+								<p className="text-xs text-red-500 dark:text-red-500 mt-1">{error}</p>
+							</div>
 						</div>
 					) : filteredEvents.length > 0 ? (
 						<div className="space-y-4">

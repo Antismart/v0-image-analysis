@@ -18,14 +18,14 @@ export default function HeroSection() {
             <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2 md:mb-4">
               <Logo size="lg" />
               <div className="h-6 sm:h-8 w-px bg-muted"></div>
-              <span className="text-xs sm:text-sm tracking-wide text-muted-foreground light-text-muted dark-text-muted">Your People. Your Events. Your Way.</span>
+              <span className="text-xs sm:text-sm tracking-wide text-muted-foreground light-text-muted dark-text-muted">Community-Powered. Onchain-Verified.</span>
             </div>
             <div className="space-y-4 sm:space-y-5 w-full">
               <h1 className="font-display font-extrabold text-balance tracking-tighter text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl leading-tight text-center lg:text-left light-text-enhanced dark-text-enhanced">
-                Pamoja – Where Your People Are.
+                Real Events. Real People. All Onchain.
               </h1>
               <p className="max-w-[600px] mx-auto lg:mx-0 text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed text-center lg:text-left px-2 sm:px-0 light-text-muted dark-text-muted">
-                Bring your people together. Plan events, chat securely, and build lasting connections — all in one place.
+                Create, discover, and attend events with transparent ticketing on Base. Token-gate your community, chat via XMTP, and own every ticket as an NFT.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-3 w-full sm:w-auto items-center lg:items-start mt-2">

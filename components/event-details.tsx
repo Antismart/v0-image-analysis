@@ -134,6 +134,12 @@ export function EventDetails({ id }: EventDetailsProps) {
 
   return (
     <div className="space-y-6">
+      {event.cancelled && (
+        <div className="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-4 text-center">
+          <p className="text-sm font-semibold text-red-600 dark:text-red-400">This event has been cancelled</p>
+        </div>
+      )}
+
       <div className="relative aspect-video overflow-hidden rounded-lg">
         <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
         {event.isTokenGated && (
@@ -149,7 +155,7 @@ export function EventDetails({ id }: EventDetailsProps) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-balance">{event.title}</h1>
-          <p className="text-muted-foreground">Organized by {event.organizer}</p>
+          <p className="text-muted-foreground">Organized by {event.organizer || "Unknown organizer"}</p>
         </div>
 
         <div className="flex gap-2">
@@ -278,13 +284,15 @@ export function EventDetails({ id }: EventDetailsProps) {
             </div>
 
             {isConnected ? (
-              <Button onClick={handleRSVP} className="w-full bg-pamoja-500 hover:bg-pamoja-600">
-                {event.ticketPrice > 0 ? "Purchase Ticket" : "RSVP"}
+              <Button onClick={handleRSVP} className="w-full bg-pamoja-500 hover:bg-pamoja-600" disabled={event.cancelled}>
+                {event.cancelled ? "Event Cancelled" : event.ticketPrice > 0 ? "Purchase Ticket" : "RSVP"}
               </Button>
             ) : (
               <div className="text-center">
                 <p className="mb-4 text-muted-foreground">Connect your wallet to RSVP for this event</p>
-                <Button variant="outline" className="w-full">Connect Wallet</Button>
+                <Button variant="outline" className="w-full" disabled={event.cancelled}>
+                  {event.cancelled ? "Event Cancelled" : "Connect Wallet"}
+                </Button>
               </div>
             )}
           </>
