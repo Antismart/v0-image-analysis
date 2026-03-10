@@ -246,7 +246,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-gray-800 text-white">
+      <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-800 text-white">
         <div className="flex items-center">
           <Avatar>
             <AvatarFallback>EV</AvatarFallback>
@@ -270,7 +270,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
       )}
 
       {/* Chat Messages */}
-      <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+      <div className="flex-1 p-3 sm:p-4 overflow-y-auto bg-gray-50">
         {/* Placeholder for no access */}
         {!hasAccess && (
           <div className="flex items-center justify-center h-full text-center text-gray-500">
@@ -314,7 +314,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
             <div ref={messagesEndRef} className="h-4"></div>
 
             {/* Input area */}
-            <form onSubmit={handleSendMessage} className="flex items-center p-4 bg-white border-t">
+            <form onSubmit={handleSendMessage} className="flex items-center p-3 sm:p-4 bg-white border-t">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
