@@ -7,7 +7,7 @@ import { CommunityIllustration } from "@/components/illustrations"
 export default function ProfilePage() {
   return (
     <section className="min-h-[80vh] bg-neutral-50 dark:bg-background transition-colors duration-300">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <div className="mb-8 grid gap-8 md:grid-cols-2 md:items-center">
           <div>
             <h1 className="mb-4 text-3xl font-bold">Your Profile</h1>
