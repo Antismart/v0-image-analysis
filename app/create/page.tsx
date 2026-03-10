@@ -1,7 +1,11 @@
-import { EventForm } from "@/components/event-form"
+import dynamic from "next/dynamic"
 import { WalletRequired } from "@/components/wallet-required"
 import { WalletBalanceDisplay } from "@/components/wallet-balance-display"
 import { EventCreationIllustration } from "@/components/illustrations"
+
+const EventForm = dynamic(() => import("@/components/event-form").then(mod => ({ default: mod.EventForm })), {
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-96" />
+})
 
 export default function CreateEventPage() {
   return (
@@ -20,7 +24,7 @@ export default function CreateEventPage() {
             <EventCreationIllustration className="max-w-[160px] sm:max-w-[200px] md:max-w-[250px] lg:max-w-[300px]" />
           </div>
         </div>
-        
+
         <div className="max-w-4xl mx-auto">
           <WalletRequired>
             <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-4">

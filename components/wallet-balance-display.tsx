@@ -5,9 +5,7 @@ import { useAccount, useBalance } from 'wagmi'
 import { useWallet } from '@/context/wallet-context'
 import { formatETHBalance, formatUSDCBalance, formatTokenBalance } from '@/lib/format-balance'
 import { Wallet, TrendingUp } from 'lucide-react'
-
-// USDC contract address on Base Sepolia
-const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as const
+import { USDC_ADDRESS } from '@/lib/constants'
 
 export function WalletBalanceDisplay() {
   const { address, isConnected } = useWallet()

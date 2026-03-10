@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { EventCard } from "@/components/event-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,11 +10,30 @@ import { EmptyStateIllustration } from "@/components/illustrations"
 import { MobileFilters } from "@/components/mobile-filters"
 import { useOnChainEvents, type OnChainEvent } from "@/hooks/use-onchain-events"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 export default function EventDiscovery() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [sortBy, setSortBy] = useState<string>("newest")
   const { events, loading, error } = useOnChainEvents()
+
+  const sortEvents = useCallback((events: OnChainEvent[]) => {
+    switch (sortBy) {
+      case "oldest":
+        return [...events].sort((a, b) => parseInt(a.id) - parseInt(b.id))
+      case "attendees":
+        return [...events].sort((a, b) => b.attendees - a.attendees)
+      case "price-low":
+        return [...events].sort((a, b) => a.ticketPrice - b.ticketPrice)
+      case "price-high":
+        return [...events].sort((a, b) => b.ticketPrice - a.ticketPrice)
+      default:
+        return [...events].sort((a, b) => parseInt(b.id) - parseInt(a.id))
+    }
+  }, [sortBy])
 
   // Filter and organize events by status and date
   const organizedEvents = useMemo(() => {
@@ -60,16 +79,13 @@ export default function EventDiscovery() {
     
     const cancelled = filtered.filter(event => event.cancelled)
 
-    // Sort each category: newest first (by creation order - lower ID = newer)
-    const sortByNewest = (a: OnChainEvent, b: OnChainEvent) => parseInt(b.id) - parseInt(a.id)
-    
     return {
-      upcoming: upcoming.sort(sortByNewest),
-      ongoing: ongoing.sort(sortByNewest),
-      ended: ended.sort(sortByNewest),
-      cancelled: cancelled.sort(sortByNewest)
+      upcoming: sortEvents(upcoming),
+      ongoing: sortEvents(ongoing),
+      ended: sortEvents(ended),
+      cancelled: sortEvents(cancelled)
     }
-  }, [events, searchTerm, activeTab])
+  }, [events, searchTerm, activeTab, sortEvents])
 
   return (
     <section
@@ -92,11 +108,41 @@ export default function EventDiscovery() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <MobileFilters />
-          <Button variant="outline" className="hidden sm:flex items-center gap-2 dark:bg-background dark:text-gray-200 dark:border-border">
-            <Filter className="h-4 w-4" />
-            Filters
-          </Button>
+          <MobileFilters onApply={(filters) => setSortBy(filters.sortBy)} />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="hidden sm:flex items-center gap-2 dark:bg-background dark:text-gray-200 dark:border-border">
+                <Filter className="h-4 w-4" />
+                Filters
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Sort By</Label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                      <SelectItem value="attendees">Most Attendees</SelectItem>
+                      <SelectItem value="price-low">Price: Low to High</SelectItem>
+                      <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setSortBy("newest")}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
       <Tabs defaultValue="all" className="mb-8" onValueChange={setActiveTab}>

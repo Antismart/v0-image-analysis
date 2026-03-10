@@ -1,12 +1,19 @@
 import { Suspense } from "react"
-import { EventDetails } from "@/components/event-details"
-import { ChatWindow } from "@/components/chat-window"
+import dynamic from "next/dynamic"
 import { TokenGate } from "@/components/token-gate"
 import { Skeleton } from "@/components/ui/skeleton"
 
+const EventDetails = dynamic(() => import("@/components/event-details").then(mod => ({ default: mod.EventDetails })), {
+  loading: () => <Skeleton className="h-[400px] w-full rounded-lg" />
+})
+
+const ChatWindow = dynamic(() => import("@/components/chat-window").then(mod => ({ default: mod.ChatWindow })), {
+  loading: () => <Skeleton className="h-[300px] w-full rounded-lg" />
+})
+
 export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  
+
   return (
     <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
       <Suspense fallback={<Skeleton className="h-[400px] w-full rounded-lg" />}>

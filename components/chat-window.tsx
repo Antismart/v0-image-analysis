@@ -16,7 +16,7 @@ import { ChatIllustration } from "@/components/illustrations"
 import { useOnChainEvents } from "@/hooks/use-onchain-events"
 import { checkUserRSVP } from "@/hooks/use-blockchain-profile"
 import { useEventChatIntegration } from "@/hooks/use-event-chat-integration"
-import { upsertUser, createGroup as createDbGroup, addUserToGroup, sendMessage as sendDbMessage, getGroupMessages } from '@/lib/group-chat-service'
+import { apiUpsertUser, apiCreateGroup, apiAddUserToGroup, apiSendMessage, apiGetGroupMessages } from '@/lib/api-client'
 
 interface ChatMessage {
   id: string
@@ -199,11 +199,11 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
       (async () => {
         try {
           if (typeof address === 'string') {
-            await upsertUser(address)
+            await apiUpsertUser(address)
             try {
-              await createDbGroup(eventGroup.name || currentEvent?.title || 'Event Chat')
+              await apiCreateGroup(eventGroup.name || currentEvent?.title || 'Event Chat')
             } catch (e) { /* ignore if already exists */ }
-            await addUserToGroup(address, eventGroup.id)
+            await apiAddUserToGroup(address, eventGroup.id)
           }
         } catch (e) {
           console.error('DB sync error:', e)
@@ -219,8 +219,8 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
 
     try {
       await sendMessage(eventGroup, message.trim())
-      await upsertUser(address)
-      await sendDbMessage(address, eventGroup.id, message.trim())
+      await apiUpsertUser(address)
+      await apiSendMessage(address, eventGroup.id, message.trim())
       setMessage("")
     } catch (error) {
       console.error("Failed to send message:", error)
@@ -233,7 +233,7 @@ export function ChatWindow({ eventId }: ChatWindowProps) {
     if (eventGroup) {
       (async () => {
         try {
-          const dbMessages = await getGroupMessages(eventGroup.id)
+          const dbMessages = await apiGetGroupMessages(eventGroup.id)
           // Optionally merge dbMessages with realTimeMessages
           // setRealTimeMessages([...dbMessages, ...realTimeMessages])
         } catch (e) {

@@ -3,6 +3,7 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { useWallet } from "@/context/wallet-context"
+import { usePrivy } from "@privy-io/react-auth"
 import { Button } from "@/components/ui/button"
 import { WalletConnectIllustration } from "@/components/illustrations"
 
@@ -11,7 +12,8 @@ interface WalletRequiredProps {
 }
 
 export function WalletRequired({ children }: WalletRequiredProps) {
-  const { isConnected, connect, connectors, address } = useWallet()
+  const { isConnected, address } = useWallet()
+  const { login } = usePrivy()
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export function WalletRequired({ children }: WalletRequiredProps) {
         <WalletConnectIllustration className="mb-6 max-w-[200px]" />
         <h3 className="mb-2 text-xl font-semibold">Wallet Connection Required</h3>
         <p className="mb-4 text-muted-foreground">Please connect your wallet to access this feature.</p>
-        <Button onClick={() => connect(connectors[0])}>Connect Wallet</Button>
+        <Button onClick={() => login()}>Connect Wallet</Button>
       </div>
     )
   }

@@ -1,8 +1,13 @@
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
-import { WelcomeIllustration } from "@/components/illustrations"
 import { ResponsiveContainer } from "@/components/responsive-container"
+
+const WelcomeIllustration = dynamic(
+  () => import("@/components/illustrations").then(mod => ({ default: mod.WelcomeIllustration })),
+  { loading: () => <div className="animate-pulse bg-gray-200 rounded-lg w-full h-[200px] sm:h-[300px] lg:h-[400px]" /> }
+)
 
 export default function HeroSection() {
   return (

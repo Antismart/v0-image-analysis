@@ -29,7 +29,7 @@ export function TokenGate({ eventId, children }: TokenGateProps) {
         // In a real implementation, this would check token ownership
         setHasAccess(true)
         setIsChecking(false)
-      }, 1500)
+      }, 300)
     } else {
       setIsChecking(false)
       setHasAccess(false)

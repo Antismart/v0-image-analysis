@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react"
-import { publicClient, CONTRACT_ADDRESS } from "@/lib/contract"
-import EventContractABI from "@/contracts/EventContractABI.json"
-import { Address } from "viem"
+"use client"
+
+import { useQuery } from "@tanstack/react-query"
+import { type Abi } from "viem"
+import { getEventContract, publicClient } from "@/lib/contract"
 
 export interface OnChainEvent {
   id: string
@@ -21,94 +22,108 @@ export interface OnChainEvent {
   speakers?: Array<{ name: string; title: string; bio: string; avatar?: string }>
 }
 
-export function useOnChainEvents() {
-  const [events, setEvents] = useState<OnChainEvent[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+async function fetchEvents(): Promise<OnChainEvent[]> {
+  const contract = getEventContract()
 
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchEvents() {
-      setLoading(true)
-      setError(null)
-      try {
-        // Get the nextEventId (number of events)
-        const nextEventId = await publicClient.readContract({
-          address: CONTRACT_ADDRESS,
-          abi: EventContractABI,
-          functionName: "nextEventId",
-        }) as bigint
-        const count = Number(nextEventId)
-        if (count === 0) {
-          setEvents([])
-          setLoading(false)
-          return
-        }
-        // Fetch all events by index in parallel, but limit concurrency for performance
-        const concurrency = 5;
-        let allEvents: OnChainEvent[] = [];
-        for (let i = 0; i < count; i += concurrency) {
-          if (cancelled) return;
-          const chunk = Array.from({ length: Math.min(concurrency, count - i) }).map(async (_, j) => {
-            const idx = i + j;
-            const event = await publicClient.readContract({
-              address: CONTRACT_ADDRESS,
-              abi: EventContractABI,
-              functionName: "events",
-              args: [BigInt(idx)],
-            }) as [
-              string, // title
-              string, // description
-              bigint, // dateTime
-              string, // location
-              string, // organizer
-              bigint, // capacity
-              bigint, // ticketPrice
-              string, // imageUrl
-              string, // usdcToken
-              string, // gateToken
-              bigint, // minTokenBalance
-              boolean, // isERC721Gate
-              boolean, // nftTicketing
-              string, // nftTicketAddress
-              string, // xmtpGroupId
-              bigint, // attendeeCount
-              boolean // cancelled
-            ];
-            return {
-              id: idx.toString(),
-              title: event[0],
-              description: event[1],
-              date: new Date(Number(event[2]) * 1000).toISOString(),
-              location: event[3],
-              organizer: event[4],
-              capacity: Number(event[5]),
-              ticketPrice: Number(event[6]) / 1e6, // USDC has 6 decimals
-              image: event[7],
-              // Token-gated if gateToken is not zero address and minTokenBalance > 0
-              isTokenGated:
-                (event[9] && event[9] !== "0x0000000000000000000000000000000000000000" && BigInt(event[10]) > 0),
-              attendees: Number(event[15]), // attendeeCount
-              xmtpGroupId: event[14],
-              cancelled: Boolean(event[16]),
-              // Hydrate schedule and speakers from localStorage if available (not on-chain)
-              schedule: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(`event-schedule-${idx}`) || '[]') : [],
-              speakers: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(`event-speakers-${idx}`) || '[]') : [],
-            } as OnChainEvent;
-          });
-          const results = await Promise.all(chunk);
-          allEvents = allEvents.concat(results);
-        }
-        if (!cancelled) setEvents(allEvents)
-      } catch (err: unknown) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to fetch events")
-      } finally {
-        if (!cancelled) setLoading(false)
+  // Get total number of events
+  const nextEventId = await publicClient.readContract({
+    address: contract.address,
+    abi: contract.abi,
+    functionName: 'nextEventId',
+  }) as bigint
+
+  const count = Number(nextEventId)
+  if (count === 0) return []
+
+  // Batch all event reads using multicall
+  const calls = Array.from({ length: count }, (_, i) => ({
+    address: contract.address as `0x${string}`,
+    abi: contract.abi as Abi,
+    functionName: 'events' as const,
+    args: [BigInt(i)],
+  }))
+
+  const results = await publicClient.multicall({ contracts: calls })
+
+  const events: OnChainEvent[] = []
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]
+    if (result.status !== 'success' || !result.result) continue
+
+    // Struct field order from the contract:
+    //  [0]  title          (string)
+    //  [1]  description    (string)
+    //  [2]  dateTime       (bigint)
+    //  [3]  location       (string)
+    //  [4]  organizer      (string)
+    //  [5]  capacity       (bigint)
+    //  [6]  ticketPrice    (bigint)
+    //  [7]  imageUrl       (string)
+    //  [8]  usdcToken      (string)
+    //  [9]  gateToken      (string)
+    //  [10] minTokenBalance(bigint)
+    //  [11] isERC721Gate   (boolean)
+    //  [12] nftTicketing   (boolean)
+    //  [13] nftTicketAddress(string)
+    //  [14] xmtpGroupId    (string)
+    //  [15] attendeeCount  (bigint)
+    //  [16] cancelled      (boolean)
+    const data = result.result as unknown[]
+
+    try {
+      const event: OnChainEvent = {
+        id: i.toString(),
+        title: String(data[0] || ''),
+        description: String(data[1] || ''),
+        date: new Date(Number(data[2]) * 1000).toISOString(),
+        location: String(data[3] || ''),
+        organizer: String(data[4] || ''),
+        capacity: Number(data[5] || 0),
+        ticketPrice: Number(data[6] || 0) / 1e6, // USDC has 6 decimals
+        image: String(data[7] || ''),
+        // Token-gated if gateToken is not zero address and minTokenBalance > 0
+        isTokenGated:
+          Boolean(data[9]) &&
+          String(data[9]) !== '0x0000000000000000000000000000000000000000' &&
+          BigInt(data[10] as bigint) > BigInt(0),
+        attendees: Number(data[15] || 0),
+        xmtpGroupId: data[14] ? String(data[14]) : undefined,
+        cancelled: Boolean(data[16]),
       }
-    }
-    fetchEvents()
-    return () => { cancelled = true; };
-  }, [])
 
-  return { events, loading, error }
+      // Hydrate schedule and speakers from localStorage (not on-chain)
+      if (typeof window !== 'undefined') {
+        try {
+          const scheduleStr = localStorage.getItem(`event-schedule-${i}`)
+          if (scheduleStr) event.schedule = JSON.parse(scheduleStr)
+          const speakersStr = localStorage.getItem(`event-speakers-${i}`)
+          if (speakersStr) event.speakers = JSON.parse(speakersStr)
+        } catch (e) {
+          // Ignore localStorage parse errors
+        }
+      }
+
+      events.push(event)
+    } catch (e) {
+      console.error(`Error parsing event ${i}:`, e)
+    }
+  }
+
+  return events.reverse() // Newest first
+}
+
+export function useOnChainEvents() {
+  const { data: events = [], isLoading: loading, error } = useQuery({
+    queryKey: ['onchain-events'],
+    queryFn: fetchEvents,
+    staleTime: 30_000, // 30 seconds
+    refetchOnWindowFocus: false,
+    enabled: typeof window !== 'undefined', // Only run on client
+  })
+
+  return {
+    events,
+    loading,
+    error: error ? (error instanceof Error ? error.message : 'Failed to fetch events') : null,
+  }
 }

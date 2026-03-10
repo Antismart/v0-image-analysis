@@ -18,16 +18,22 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 
-export function MobileFilters() {
+interface MobileFiltersProps {
+  onApply?: (filters: { sortBy: string }) => void
+}
+
+export function MobileFilters({ onApply }: MobileFiltersProps) {
   const [dateFilter, setDateFilter] = useState("all")
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState("newest")
+  const [open, setOpen] = useState(false)
 
   const handleTypeChange = (type: string) => {
     setSelectedTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]))
   }
 
   return (
-    <Drawer>
+    <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2 sm:hidden">
           <Filter className="h-4 w-4" />
@@ -118,10 +124,41 @@ export function MobileFilters() {
                 </div>
               </div>
             </div>
+
+            <Separator />
+
+            <div>
+              <h3 className="mb-2 text-sm font-medium">Sort By</h3>
+              <RadioGroup value={sortBy} onValueChange={setSortBy}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="newest" id="sort-newest" />
+                  <Label htmlFor="sort-newest">Newest First</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="oldest" id="sort-oldest" />
+                  <Label htmlFor="sort-oldest">Oldest First</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="attendees" id="sort-attendees" />
+                  <Label htmlFor="sort-attendees">Most Attendees</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="price-low" id="sort-price-low" />
+                  <Label htmlFor="sort-price-low">Price: Low to High</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="price-high" id="sort-price-high" />
+                  <Label htmlFor="sort-price-high">Price: High to Low</Label>
+                </div>
+              </RadioGroup>
+            </div>
           </div>
         </div>
         <DrawerFooter>
-          <Button>Apply Filters</Button>
+          <Button onClick={() => {
+            onApply?.({ sortBy })
+            setOpen(false)
+          }}>Apply Filters</Button>
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>

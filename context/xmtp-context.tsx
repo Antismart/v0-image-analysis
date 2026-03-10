@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { Client } from "@xmtp/browser-sdk"
 import { useWallet } from "@/context/wallet-context"
-import { upsertUser, createGroup as createDbGroup, addUserToGroup, sendMessage as sendDbMessage, getGroupMessages } from '@/lib/group-chat-service'
+import { apiUpsertUser, apiCreateGroup, apiAddUserToGroup, apiSendMessage, apiGetGroupMessages } from '@/lib/api-client'
 
 export interface XMTPMessage {
   id: string
@@ -107,17 +107,30 @@ const XMTPContext = createContext<XMTPContextType>({
 
 export const useXMTP = () => useContext(XMTPContext)
 
-// Generate a database encryption key for V3
-function generateDbEncryptionKey(): Uint8Array {
+// Get or create a persistent database encryption key for V3
+function getOrCreateDbEncryptionKey(walletAddress: string): Uint8Array {
+  const storageKey = `xmtp-db-key-${walletAddress.toLowerCase()}`
+
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(storageKey)
+    if (stored) {
+      return Uint8Array.from(JSON.parse(stored))
+    }
+  }
+
   const key = new Uint8Array(32)
   if (typeof window !== 'undefined' && window.crypto) {
     window.crypto.getRandomValues(key)
   } else {
-    // Fallback for server-side or older browsers
     for (let i = 0; i < 32; i++) {
       key[i] = Math.floor(Math.random() * 256)
     }
   }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(key)))
+  }
+
   return key
 }
 
@@ -202,7 +215,7 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Generate or retrieve database encryption key
-      const dbEncryptionKey = generateDbEncryptionKey()
+      const dbEncryptionKey = getOrCreateDbEncryptionKey(address)
 
       const client = await Client.create(signer, {
         env: process.env.XMTP_ENV === 'prod' ? 'production' : 'dev',
@@ -421,26 +434,26 @@ export function XMTPProvider({ children }: { children: React.ReactNode }) {
   // Example: When a user joins an event chat, ensure they exist in the DB and are added to the group
   async function ensureUserInDbAndGroup(address: string, groupId: string, groupName: string) {
     // Upsert user in DB
-    const user = await upsertUser(address)
+    const user = await apiUpsertUser(address)
     // Upsert group in DB
     try {
-      await createDbGroup(groupName)
+      await apiCreateGroup(groupName)
     } catch (e) {
       // Group may already exist, ignore error
     }
     // Add user to group in DB
-    await addUserToGroup(user.id, groupId)
+    await apiAddUserToGroup(user.id, groupId)
   }
 
   // Example: When sending a message, also store it in the DB
   async function handleSendMessageDb(senderAddress: string, groupId: string, content: string) {
-    const user = await upsertUser(senderAddress)
-    await sendDbMessage(user.id, groupId, content)
+    const user = await apiUpsertUser(senderAddress)
+    await apiSendMessage(user.id, groupId, content)
   }
 
   // Example: Fetch messages for a group from the DB
   async function fetchGroupMessagesDb(groupId: string, limit = 50) {
-    return getGroupMessages(groupId, limit)
+    return apiGetGroupMessages(groupId, limit)
   }
 
   return (

@@ -1,4 +1,8 @@
-import { XmtpV3Test } from "@/components/xmtp-v3-test"
+import dynamic from "next/dynamic"
+
+const XmtpV3Test = dynamic(() => import("@/components/xmtp-v3-test").then(mod => ({ default: mod.XmtpV3Test })), {
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-64" />
+})
 
 export default function XmtpTestPage() {
   return (
@@ -11,14 +15,14 @@ export default function XmtpTestPage() {
           </p>
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <p className="text-sm">
-              <strong>Migration Status:</strong> V3 implementation complete. 
+              <strong>Migration Status:</strong> V3 implementation complete.
               V2 deprecated as of June 23, 2025 (18 days remaining).
             </p>
           </div>
         </div>
-        
+
         <XmtpV3Test />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">V2 → V3 Key Changes</h2>
@@ -45,7 +49,7 @@ export default function XmtpTestPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">Migration Benefits</h2>
             <div className="space-y-3 text-sm">
@@ -68,7 +72,7 @@ export default function XmtpTestPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <h3 className="font-semibold mb-2">Testing Instructions:</h3>
           <ol className="list-decimal list-inside space-y-1 text-sm">

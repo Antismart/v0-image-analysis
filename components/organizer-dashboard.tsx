@@ -115,8 +115,17 @@ export function OrganizerDashboard() {
 
 				<TabsContent value="upcoming" className="mt-4 sm:mt-6">
 					{loading ? (
-						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed">
-							<span className="text-sm text-muted-foreground">Loading events...</span>
+						<div className="animate-pulse space-y-4">
+							{[...Array(3)].map((_, i) => (
+								<div key={i} className="flex gap-4 p-4 border rounded-lg">
+									<div className="h-24 w-32 bg-gray-200 rounded" />
+									<div className="flex-1 space-y-2">
+										<div className="h-5 bg-gray-200 rounded w-1/2" />
+										<div className="h-4 bg-gray-200 rounded w-1/3" />
+										<div className="h-4 bg-gray-200 rounded w-1/4" />
+									</div>
+								</div>
+							))}
 						</div>
 					) : error ? (
 						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed">
@@ -201,8 +210,17 @@ export function OrganizerDashboard() {
 
 				<TabsContent value="past" className="mt-4 sm:mt-6">
 					{loading ? (
-						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed">
-							<span className="text-sm text-muted-foreground">Loading events...</span>
+						<div className="animate-pulse space-y-4">
+							{[...Array(3)].map((_, i) => (
+								<div key={i} className="flex gap-4 p-4 border rounded-lg">
+									<div className="h-24 w-32 bg-gray-200 rounded" />
+									<div className="flex-1 space-y-2">
+										<div className="h-5 bg-gray-200 rounded w-1/2" />
+										<div className="h-4 bg-gray-200 rounded w-1/3" />
+										<div className="h-4 bg-gray-200 rounded w-1/4" />
+									</div>
+								</div>
+							))}
 						</div>
 					) : error ? (
 						<div className="flex h-32 sm:h-40 items-center justify-center rounded-lg border border-dashed">

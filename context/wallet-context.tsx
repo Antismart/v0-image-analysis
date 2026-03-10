@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react"
+import { createContext, useContext, useMemo, type ReactNode } from "react"
 import { useAccount, useWalletClient, useConnect, useDisconnect, type Connector } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { viemWalletClientToEthersSigner } from "@/lib/viem-to-ethers"
@@ -35,32 +35,7 @@ const WalletContext = createContext<WalletContextType>({
 export const useWallet = () => useContext(WalletContext)
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // During SSR or before hydration, provide safe defaults
-  if (!mounted) {
-    return (
-      <WalletContext.Provider value={{
-        address: null,
-        isConnected: false,
-        walletClient: null,
-        isWalletClientReady: false,
-        connect: async () => {},
-        disconnect: () => {},
-        connectors: [],
-        getEthersSigner: async () => null,
-        getEthers5Signer: async () => null
-      }}>
-        {children}
-      </WalletContext.Provider>
-    );
-  }
-
-  // Component that uses Wagmi hooks only after mounting
+  // ClientRoot already handles the mount guard, so render directly
   return <WalletProviderInner>{children}</WalletProviderInner>;
 }
 

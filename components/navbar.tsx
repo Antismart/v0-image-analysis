@@ -3,20 +3,24 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { Menu, X, Lock } from "lucide-react"
 import { WalletConnect } from "@/components/wallet-connect"
 import { ModeToggle } from "@/components/mode-toggle"
 import { LogoWithText } from "@/components/logo"
+import { useWallet } from "@/context/wallet-context"
+import { cn } from "@/lib/utils"
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { isConnected } = useWallet()
 
   const routes = [
-    { name: "Home", path: "/" },
-    { name: "Create Event", path: "/create" },
-    { name: "Profile", path: "/profile" },
-    { name: "Dashboard", path: "/dashboard" },
+    { name: "Home", path: "/", requiresWallet: false },
+    { name: "Events", path: "/#events", requiresWallet: false },
+    { name: "Create Event", path: "/create", requiresWallet: true },
+    { name: "Profile", path: "/profile", requiresWallet: false },
+    { name: "Dashboard", path: "/dashboard", requiresWallet: true },
   ]
 
   return (
@@ -34,13 +38,20 @@ export default function Navbar() {
             <Link
               key={route.path}
               href={route.path}
-              className={`nav-link tracking-wide text-sm lg:text-base ${
+              className={cn(
+                "nav-link tracking-wide text-sm lg:text-base transition-colors",
                 pathname === route.path
                   ? "text-pamoja-500 font-medium dark:text-pamoja-400"
-                  : "text-muted-foreground hover:text-foreground dark:hover:text-white"
-              }`}
+                  : "text-muted-foreground hover:text-foreground dark:hover:text-white",
+                route.requiresWallet && !isConnected && "opacity-50"
+              )}
             >
-              {route.name}
+              <span className="inline-flex items-center gap-1">
+                {route.name}
+                {route.requiresWallet && !isConnected && (
+                  <Lock className="h-3 w-3" aria-label="Wallet connection required" />
+                )}
+              </span>
             </Link>
           ))}
         </nav>
@@ -70,14 +81,21 @@ export default function Navbar() {
               <Link
                 key={route.path}
                 href={route.path}
-                className={`nav-link tracking-wide px-3 py-3 rounded-md touch-target ${
+                className={cn(
+                  "nav-link tracking-wide px-3 py-3 rounded-md touch-target transition-colors",
                   pathname === route.path
                     ? "text-pamoja-500 font-medium dark:text-pamoja-400 bg-pamoja-50 dark:bg-pamoja-950 light-shadow-interactive dark-shadow-interactive"
-                    : "text-muted-foreground dark:text-muted-foreground/90 hover:bg-muted hover:text-foreground light-card-hover dark-card-hover"
-                }`}
+                    : "text-muted-foreground dark:text-muted-foreground/90 hover:bg-muted hover:text-foreground light-card-hover dark-card-hover",
+                  route.requiresWallet && !isConnected && "opacity-50"
+                )}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {route.name}
+                <span className="inline-flex items-center gap-1">
+                  {route.name}
+                  {route.requiresWallet && !isConnected && (
+                    <Lock className="h-3 w-3" aria-label="Wallet connection required" />
+                  )}
+                </span>
               </Link>
             ))}
             <div className="pt-2 px-3">

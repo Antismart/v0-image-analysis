@@ -1,6 +1,4 @@
-import { PrismaClient } from '../lib/generated/prisma';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Create or find a user by address
 export async function upsertUser(address: string) {

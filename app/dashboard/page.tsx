@@ -1,5 +1,12 @@
+"use client"
+
 import { Suspense } from "react"
-import { OrganizerDashboard } from "@/components/organizer-dashboard"
+import dynamic from "next/dynamic"
+
+const OrganizerDashboard = dynamic(
+  () => import("@/components/organizer-dashboard").then(mod => ({ default: mod.OrganizerDashboard })),
+  { ssr: false, loading: () => <div className="animate-pulse h-[500px] bg-gray-200 rounded-lg" /> }
+)
 import { WalletRequired } from "@/components/wallet-required"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardIllustration } from "@/components/illustrations"

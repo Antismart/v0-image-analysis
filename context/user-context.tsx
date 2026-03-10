@@ -43,8 +43,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setError(null)
 
     try {
-      // In a real implementation, this would fetch from a blockchain or API
-      // For demo purposes, we'll use mock data
+      // TODO: Replace mock data with real user profile from blockchain
       setTimeout(() => {
         const mockProfile: UserProfile = {
           reputation: 85,

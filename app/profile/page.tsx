@@ -1,5 +1,12 @@
+"use client"
+
 import { Suspense } from "react"
-import { ProfileView } from "@/components/profile-view"
+import dynamic from "next/dynamic"
+
+const ProfileView = dynamic(
+  () => import("@/components/profile-view").then(mod => ({ default: mod.ProfileView })),
+  { ssr: false, loading: () => <div className="animate-pulse h-[600px] bg-gray-200 rounded-lg" /> }
+)
 import { WalletRequired } from "@/components/wallet-required"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CommunityIllustration } from "@/components/illustrations"

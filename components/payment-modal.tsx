@@ -15,6 +15,7 @@ import { Loading } from "@/components/ui/loading"
 import { getEventContract, publicClient } from "@/lib/contract"
 import { erc20Abi } from "viem"
 import { baseSepolia } from "@/lib/base-sepolia"
+import { USDC_ADDRESS, BLOCK_EXPLORER_URL } from "@/lib/constants"
 
 interface PaymentModalProps {
   isOpen: boolean
@@ -25,8 +26,6 @@ interface PaymentModalProps {
   eventTitle: string
   organizer: string // Add organizer prop
 }
-
-const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const // Base Sepolia USDC
 
 export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eventTitle, organizer }: PaymentModalProps) {
   const { address, walletClient } = useWallet()
@@ -215,9 +214,14 @@ export function PaymentModal({ isOpen, onClose, onComplete, amount, eventId, eve
               <p className="mb-2 font-medium text-green-600 dark:text-green-400">Transaction successful!</p>
               <p className="text-sm text-muted-foreground">
                 Transaction hash:{" "}
-                <span className="font-mono">
+                <a
+                  href={`${BLOCK_EXPLORER_URL}/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-blue-600 hover:underline"
+                >
                   {txHash.slice(0, 10)}...{txHash.slice(-8)}
-                </span>
+                </a>
               </p>
             </div>
           )}

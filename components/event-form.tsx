@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { LoadingButton } from "@/components/ui/loading"
+import { useToast } from "@/hooks/use-toast"
 import { useWallet } from "@/context/wallet-context"
 import { useXMTP } from "@/context/xmtp-context"
 import { getEventContract, publicClient } from "@/lib/contract"
@@ -56,11 +57,19 @@ interface EventFormData {
 
 export function EventForm({ mode = "create", eventData }: { mode?: "create" | "edit"; eventData?: EventFormData }) {
   const router = useRouter()
+  const { toast } = useToast()
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [isTokenGated, setIsTokenGated] = useState(false)
   const [isNftTicket, setIsNftTicket] = useState(false)
   const [enableChat, setEnableChat] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [title, setTitle] = useState(eventData?.title || "")
+  const [description, setDescription] = useState(eventData?.description || "")
+  const [location, setLocation] = useState(eventData?.location || "")
+  const [time, setTime] = useState(eventData?.time || "")
+  const [capacity, setCapacity] = useState(eventData?.capacity?.toString() || "")
+  const [ticketPrice, setTicketPrice] = useState(eventData?.ticketPrice || "")
+  const [tokenAddress, setTokenAddress] = useState(eventData?.tokenAddress || "")
   const [schedule, setSchedule] = useState<ScheduleItem[]>(eventData?.schedule || [
     { title: "", time: "", description: "" }
   ])
@@ -88,7 +97,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
     // Check wallet connection
     if (!isConnected || !address) {
       setIsSubmitting(false);
-      alert("Please connect your wallet to create an event.");
+      toast({ title: "Wallet Required", description: "Please connect your wallet to create an event.", variant: "destructive" });
       return;
     }
 
@@ -106,7 +115,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
 
       if (!walletClient) {
         setIsSubmitting(false);
-        alert("Wallet client not available. Please reconnect your wallet and try again.");
+        toast({ title: "Wallet Error", description: "Wallet client not available. Please reconnect.", variant: "destructive" });
         return;
       }
     }
@@ -117,13 +126,13 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       signer = await getEthers5Signer();
       if (!signer) {
         setIsSubmitting(false);
-        alert("Wallet client not ready. Please try reconnecting your wallet.");
+        toast({ title: "Wallet Error", description: "Wallet client not available. Please reconnect.", variant: "destructive" });
         return;
       }
     } catch (error) {
       console.error("Error getting signer:", error);
       setIsSubmitting(false);
-      alert("Failed to get wallet signer. Please try reconnecting your wallet.");
+      toast({ title: "Signer Error", description: "Failed to get wallet signer. Please reconnect.", variant: "destructive" });
       return;
     }
 
@@ -142,26 +151,23 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
         }
       } catch (err) {
         setIsSubmitting(false);
-        alert('Image upload failed. Please try again.');
+        toast({ title: "Upload Failed", description: "Image upload failed. Please try again.", variant: "destructive" });
         return;
       }
     }
     try {
-      // Collect form values
-      const title = (document.getElementById('title') as HTMLInputElement)?.value || '';
-      const description = (document.getElementById('description') as HTMLTextAreaElement)?.value || '';
-      const location = (document.getElementById('location') as HTMLInputElement)?.value || '';
-      const capacity = parseInt((document.getElementById('capacity') as HTMLInputElement)?.value || '0', 10);
+      // Collect form values from state
+      const capacityNum = parseInt(capacity || '0', 10);
       // Combine date and time fields
       let dateTime = 0;
       if (date) {
-        const timeStr = (document.getElementById('time') as HTMLInputElement)?.value || '00:00';
+        const timeStr = time || '00:00';
         const [hours, minutes] = timeStr.split(':').map(Number);
         const combined = new Date(date);
         combined.setHours(hours || 0, minutes || 0, 0, 0);
         dateTime = Math.floor(combined.getTime() / 1000);
       }
-      let ticketPrice = BigInt(0);
+      let ticketPriceBigInt = BigInt(0);
       let usdcToken = '0x0000000000000000000000000000000000000000';
       let xmtpGroupId = '';
 
@@ -169,9 +175,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       if (isNftTicket) {
         // USDC address for Base Sepolia testnet
         usdcToken = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
-        const ticketPriceUsd = (document.getElementById('ticket-price') as HTMLInputElement)?.value || '0';
         // Convert to 6 decimals for USDC
-        ticketPrice = BigInt(Math.floor(Number(ticketPriceUsd) * 1_000_000));
+        ticketPriceBigInt = BigInt(Math.floor(Number(ticketPrice || '0') * 1_000_000));
       }
 
       // XMTP Group Creation
@@ -214,8 +219,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
         description,
         dateTime,
         location,
-        BigInt(capacity),
-        ticketPrice,
+        BigInt(capacityNum),
+        ticketPriceBigInt,
         imageUrl,
         usdcToken,
         xmtpGroupId,
@@ -225,6 +230,9 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       if (!walletClient) {
         throw new Error("Wallet client is no longer available");
       }
+
+      // Confirmation toast before blockchain transaction
+      toast({ title: "Creating Event", description: `"${title}" on ${date?.toLocaleDateString()} at ${location}` });
 
       const txHash = await walletClient.writeContract({
         address: contract.address,
@@ -239,8 +247,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
       router.push("/dashboard");
     } catch (err: unknown) {
       setIsSubmitting(false);
-      const message = err instanceof Error ? err.message : String(err);
-      alert('Failed to create event: ' + message);
+      toast({ title: "Event Creation Failed", description: err instanceof Error ? err.message : "Failed to create event.", variant: "destructive" });
     }
   }
 
@@ -281,7 +288,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
         setSpeakers((prev) => prev.map((s, i) => i === idx ? { ...s, avatar: data.ipfsUrl } : s));
       }
     } catch (err) {
-      alert('Speaker image upload failed. Please try again.');
+      toast({ title: "Upload Failed", description: "Speaker image upload failed.", variant: "destructive" });
     }
   }
 
@@ -308,7 +315,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
             placeholder="Enter event title"
             required
             className="mt-1.5 text-base sm:text-sm"
-            defaultValue={eventData?.title}
+            value={title}
+            onChange={e => setTitle(e.target.value)}
           />
         </div>
 
@@ -321,7 +329,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
             placeholder="Describe your event"
             className="min-h-20 sm:min-h-24 md:min-h-32 mt-1.5 text-base sm:text-sm resize-none"
             required
-            defaultValue={eventData?.description}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
           />
         </div>
 
@@ -358,7 +367,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
                 type="time"
                 className="pl-10 h-11 sm:h-10 text-base sm:text-sm"
                 required
-                defaultValue={eventData?.time}
+                value={time}
+                onChange={e => setTime(e.target.value)}
               />
             </div>
           </div>
@@ -375,7 +385,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
               placeholder="Event location or 'Virtual'"
               className="pl-10 h-11 sm:h-10 text-base sm:text-sm"
               required
-              defaultValue={eventData?.location}
+              value={location}
+              onChange={e => setLocation(e.target.value)}
             />
           </div>
         </div>
@@ -393,7 +404,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
               placeholder="Maximum attendees"
               className="pl-10 h-11 sm:h-10 text-base sm:text-sm"
               required
-              defaultValue={eventData?.capacity}
+              value={capacity}
+              onChange={e => setCapacity(e.target.value)}
             />
           </div>
         </div>
@@ -440,7 +452,7 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
             <div className="space-y-4 rounded-lg border p-3 sm:p-4">
               <div>
                 <Label htmlFor="token-address" className="text-sm">Token Contract Address</Label>
-                <Input id="token-address" placeholder="0x..." defaultValue={eventData?.tokenAddress} className="mt-1" />
+                <Input id="token-address" placeholder="0x..." value={tokenAddress} onChange={e => setTokenAddress(e.target.value)} className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="token-amount" className="text-sm">Minimum Token Amount</Label>
@@ -478,7 +490,8 @@ export function EventForm({ mode = "create", eventData }: { mode?: "create" | "e
                     min="0"
                     step="0.001"
                     placeholder="0.05"
-                    defaultValue={eventData?.ticketPrice}
+                    value={ticketPrice}
+                    onChange={e => setTicketPrice(e.target.value)}
                     className="mt-1"
                   />
                 </div>
