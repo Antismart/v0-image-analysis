@@ -23,7 +23,7 @@ export default function CreateEventPage() {
         
         <div className="max-w-4xl mx-auto">
           <WalletRequired>
-            <div className="grid gap-6 lg:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-4">
               <div className="lg:col-span-3">
                 <EventForm />
               </div>
